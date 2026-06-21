@@ -116,7 +116,9 @@ export async function POST(req: NextRequest) {
           select: { id: true, name: true, url: true },
         });
 
-        const docUrlMap = new Map(documents.map((d) => [d.id, d.url]));
+        const docUrlMap = new Map<string, string | null>(
+          documents.map((d: { id: string; name: string; url: string | null }) => [d.id, d.url])
+        );
 
         context = searchResults
           .map((res: any, idx) => {
@@ -127,7 +129,9 @@ export async function POST(req: NextRequest) {
           .join("\n---\n");
 
         // Construct a clean, clickable sources footer
-        const uniqueDocsWithUrls = documents.filter((d) => d.url);
+        const uniqueDocsWithUrls = documents.filter(
+          (d: { id: string; name: string; url: string | null }) => d.url
+        );
         if (uniqueDocsWithUrls.length > 0) {
           sourcesFooter = "\n\n---\n**Sources Cited:**\n" + uniqueDocsWithUrls
             .map((doc, idx) => `- [${doc.name}](${doc.url})`)
