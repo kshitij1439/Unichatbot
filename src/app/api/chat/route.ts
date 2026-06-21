@@ -152,7 +152,7 @@ export async function POST(req: NextRequest) {
       orderBy: { createdAt: "asc" },
     });
 
-    const chatHistory = historyMessages.map((msg) => ({
+    const chatHistory = historyMessages.map((msg: { role: string; content: string }) => ({
       role: msg.role,
       content: msg.content,
     }));
