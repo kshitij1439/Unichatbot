@@ -147,9 +147,31 @@ export default function ChatWindow({ sessionId, onSessionStarted }: ChatWindowPr
       const isBullet = line.trim().startsWith("- ") || line.trim().startsWith("* ");
       const displayLine = line.replace(/^[-*]\s+/, "");
 
-      // Inline Bold formatting (**text**)
-      const parts = displayLine.split(/(\*\*.*?\*\*)/g);
+      // Split by markdown link syntax [label](url) or bold syntax **text**
+      const regex = /(\[.*?\]\(.*?\))|(\*\*.*?\*\*)/g;
+      const parts = displayLine.split(regex);
+
       const renderedLine = parts.map((part, pIdx) => {
+        if (!part) return null;
+
+        // Check for markdown link: [label](url)
+        if (part.startsWith("[") && part.includes("](") && part.endsWith(")")) {
+          const linkText = part.substring(1, part.indexOf("]"));
+          const linkUrl = part.substring(part.indexOf("](") + 2, part.length - 1);
+          return (
+            <a
+              key={pIdx}
+              href={linkUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-indigo-400 hover:text-indigo-300 underline font-semibold transition-colors duration-150"
+            >
+              {linkText}
+            </a>
+          );
+        }
+
+        // Check for bold text: **text**
         if (part.startsWith("**") && part.endsWith("**")) {
           return (
             <strong key={pIdx} className="font-bold text-white">
@@ -157,6 +179,7 @@ export default function ChatWindow({ sessionId, onSessionStarted }: ChatWindowPr
             </strong>
           );
         }
+
         return part;
       });
 

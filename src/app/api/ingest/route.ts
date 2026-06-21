@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { listDriveFiles, downloadDriveFile } from "@/lib/gdrive";
+import { listDriveChildren, downloadDriveFile } from "@/lib/gdrive";
 import { uploadBuffer } from "@/lib/cloudinary";
 import { parsePdf, chunkText } from "@/lib/parser";
 import { getEmbedding } from "@/lib/gemini";
@@ -8,11 +8,16 @@ import { upsertChunks, deleteDocumentChunks } from "@/lib/qdrant";
 import crypto from "crypto";
 
 /**
- * GET: Lists all files in the designated Google Drive folder and maps them
- * to their current ingestion status in the Prisma database.
+ * GET: Lists immediate children (files + folders) of a Google Drive folder.
+ * Accepts optional ?folderId= parameter to browse into subfolders.
+ * Returns ingestion status for files by checking the Prisma database.
  */
-export async function GET() {
-  const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const rootFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
+
+  // Use the provided folderId to browse into subfolders, or default to root
+  const folderId = searchParams.get("folderId") || rootFolderId;
 
   if (!folderId) {
     return NextResponse.json(
@@ -22,21 +27,46 @@ export async function GET() {
   }
 
   try {
-    // 1. Fetch files from Google Drive
-    const driveFiles = await listDriveFiles(folderId);
+    // 1. Fetch immediate children from Google Drive (single-level, fast)
+    const driveItems = await listDriveChildren(folderId);
 
-    // 2. Fetch documents recorded in Prisma
-    const dbDocuments = await prisma.document.findMany();
+    // 2. Collect all file IDs (non-folder) to batch-check ingestion status
+    const fileIds = driveItems.filter((item) => !item.isFolder).map((item) => item.id);
 
-    // 3. Map drive files to db statuses
-    const files = driveFiles.map((driveFile) => {
-      const dbDoc = dbDocuments.find((doc) => doc.fileId === driveFile.id);
+    // 3. Fetch documents recorded in Prisma
+    const dbDocuments = await prisma.document.findMany({
+      where: {
+        fileId: { in: fileIds },
+      },
+    });
+
+    const dbDocMap = new Map(dbDocuments.map((doc) => [doc.fileId, doc]));
+
+    // 4. Map drive items to response items
+    const items = driveItems.map((item) => {
+      if (item.isFolder) {
+        return {
+          id: item.id,
+          name: item.name,
+          mimeType: item.mimeType,
+          size: null,
+          createdTime: item.createdTime,
+          isFolder: true,
+          ingested: false,
+          status: "FOLDER" as const,
+          dbId: null,
+          url: null,
+        };
+      }
+
+      const dbDoc = dbDocMap.get(item.id);
       return {
-        id: driveFile.id,
-        name: driveFile.name,
-        mimeType: driveFile.mimeType,
-        size: driveFile.size,
-        createdTime: driveFile.createdTime,
+        id: item.id,
+        name: item.name,
+        mimeType: item.mimeType,
+        size: item.size || null,
+        createdTime: item.createdTime,
+        isFolder: false,
         ingested: !!dbDoc && dbDoc.status === "COMPLETED",
         status: dbDoc ? dbDoc.status : "NOT_INGESTED",
         dbId: dbDoc ? dbDoc.id : null,
@@ -44,22 +74,31 @@ export async function GET() {
       };
     });
 
-    // Also include any local-only documents that aren't on Drive
-    const localOnly = dbDocuments
-      .filter((doc) => !doc.fileId)
-      .map((doc) => ({
+    // 5. Also include any locally-uploaded documents (no fileId) when showing root
+    let localOnly: any[] = [];
+    if (folderId === rootFolderId) {
+      const localDocs = await prisma.document.findMany({
+        where: { fileId: null },
+      });
+      localOnly = localDocs.map((doc) => ({
         id: null,
         name: doc.name,
         mimeType: doc.mimeType || "application/pdf",
         size: null,
         createdTime: doc.createdAt.toISOString(),
+        isFolder: false,
         ingested: doc.status === "COMPLETED",
         status: doc.status,
         dbId: doc.id,
         url: doc.url,
       }));
+    }
 
-    return NextResponse.json({ files: [...files, ...localOnly] });
+    return NextResponse.json({
+      folderId,
+      isRoot: folderId === rootFolderId,
+      items: [...items, ...localOnly],
+    });
   } catch (error: any) {
     console.error("Ingestion list error:", error);
     return NextResponse.json(
@@ -73,8 +112,10 @@ export async function GET() {
  * POST: Triggers the ingestion pipeline for a specific Google Drive file ID.
  */
 export async function POST(req: NextRequest) {
+  let fileId: string | undefined = undefined;
   try {
-    const { fileId } = await req.json();
+    const body = await req.json();
+    fileId = body.fileId;
 
     if (!fileId) {
       return NextResponse.json({ error: "fileId parameter is required" }, { status: 400 });
@@ -211,10 +252,9 @@ export async function POST(req: NextRequest) {
     
     // Attempt to mark document as FAILED if we have its ID
     try {
-      const requestData = await req.clone().json().catch(() => ({}));
-      if (requestData.fileId) {
+      if (fileId) {
         await prisma.document.updateMany({
-          where: { fileId: requestData.fileId, status: "PROCESSING" },
+          where: { fileId, status: "PROCESSING" },
           data: { status: "FAILED" },
         });
       }

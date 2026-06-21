@@ -13,7 +13,7 @@ export async function getEmbedding(text: string): Promise<number[]> {
   }
   
   try {
-    const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
+    const model = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
     const result = await model.embedContent(text);
     return result.embedding.values;
   } catch (error) {
@@ -35,19 +35,11 @@ export async function generateChatResponse(
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-    // Format history for Gemini API
-    const formattedHistory = history.map((msg) => ({
-      role: msg.role === "assistant" ? "model" : "user",
-      parts: [{ text: msg.content }],
-    }));
-
     const systemInstruction = `You are a helpful and knowledgeable university chatbot.
 You help students study and learn from university exam papers, lectures, and resources.
 Use the provided EXAM PAPER CONTEXT below to answer the user's question. 
 If the context doesn't contain the answer, use your general knowledge, but prioritize details in the context.
-Always cite the source/paper name if available.
+Always cite your sources. When you refer to details from a source (e.g. Source 1, Source 2), format the citation inline exactly as \`[Source 1]\` or \`[Source 2]\` at the end of the sentence or bullet point. Do not construct markdown hyperlinks inside your response text; simply use the bracketed source index, e.g. \`[Source 1]\`.
 Keep your tone academic, encouraging, and supportive.
 
 ---
@@ -55,9 +47,19 @@ EXAM PAPER CONTEXT:
 ${context}
 ---`;
 
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-2.5-flash",
+      systemInstruction,
+    });
+
+    // Format history for Gemini API
+    const formattedHistory = history.map((msg) => ({
+      role: msg.role === "assistant" ? "model" : "user",
+      parts: [{ text: msg.content }],
+    }));
+
     const chat = model.startChat({
       history: formattedHistory,
-      systemInstruction,
     });
 
     const result = await chat.sendMessage(message);

@@ -98,18 +98,41 @@ export async function POST(req: NextRequest) {
     // 4. Retrieve context from Qdrant DB
     console.log("Generating query embedding for vector search...");
     let context = "";
+    let sourcesFooter = "";
     try {
       const queryEmbedding = await getEmbedding(message);
       console.log("Searching Qdrant for similar chunks...");
       const searchResults = await searchSimilarChunks(queryEmbedding, 4);
 
       if (searchResults && searchResults.length > 0) {
+        // Collect unique document IDs from search results
+        const docIds = Array.from(
+          new Set(searchResults.map((res: any) => res.payload?.documentId).filter(Boolean))
+        ) as string[];
+
+        // Fetch Cloudinary URLs and names for these documents
+        const documents = await prisma.document.findMany({
+          where: { id: { in: docIds } },
+          select: { id: true, name: true, url: true },
+        });
+
+        const docUrlMap = new Map(documents.map((d) => [d.id, d.url]));
+
         context = searchResults
           .map((res: any, idx) => {
             const payload = res.payload;
-            return `[Source ${idx + 1}: ${payload?.docName || "Unknown Doc"}]\nContent:\n${payload?.content || ""}\n`;
+            const docUrl = docUrlMap.get(payload?.documentId) || "";
+            return `[Source ${idx + 1}: ${payload?.docName || "Unknown Doc"}] (URL: ${docUrl})\nContent:\n${payload?.content || ""}\n`;
           })
           .join("\n---\n");
+
+        // Construct a clean, clickable sources footer
+        const uniqueDocsWithUrls = documents.filter((d) => d.url);
+        if (uniqueDocsWithUrls.length > 0) {
+          sourcesFooter = "\n\n---\n**Sources Cited:**\n" + uniqueDocsWithUrls
+            .map((doc, idx) => `- [${doc.name}](${doc.url})`)
+            .join("\n");
+        }
       }
     } catch (qdrantErr) {
       console.error("Vector search failed, proceeding without context:", qdrantErr);
@@ -133,12 +156,13 @@ export async function POST(req: NextRequest) {
     // 6. Ask Gemini for reply
     console.log("Requesting Gemini chat completion...");
     const aiResponseContent = await generateChatResponse(message, chatHistory, context);
+    const finalResponseContent = aiResponseContent + sourcesFooter;
 
     // 7. Save AI assistant response to database
     const assistantMessage = await prisma.message.create({
       data: {
         role: "assistant",
-        content: aiResponseContent,
+        content: finalResponseContent,
         sessionId,
       },
     });

@@ -1,16 +1,22 @@
-import * as pdfImport from "pdf-parse";
-// Bypasses default export resolution differences in bundlers
-const pdf = (pdfImport as any).default || pdfImport;
+import { PDFParse } from "pdf-parse";
+import path from "path";
+import { pathToFileURL } from "url";
+
+// Dynamically locate and set the pdfjs worker path as a file:// URL (required on Windows)
+const workerPath = path.resolve(process.cwd(), "node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs");
+PDFParse.setWorker(pathToFileURL(workerPath).href);
 
 /**
  * Extracts raw text from a PDF Buffer.
  */
 export async function parsePdf(buffer: Buffer): Promise<{ text: string; pagesCount: number }> {
   try {
-    const data = await pdf(buffer);
+    const uint8Array = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+    const parser = new PDFParse({ data: uint8Array });
+    const result = await parser.getText();
     return {
-      text: data.text || "",
-      pagesCount: data.numpages || 1,
+      text: result.text || "",
+      pagesCount: result.total || 1,
     };
   } catch (error) {
     console.error("Error parsing PDF file:", error);
@@ -48,11 +54,13 @@ export function chunkText(text: string, chunkSize = 1000, chunkOverlap = 200): s
     }
 
     // Move start index forward, accounting for overlap
-    startIndex = endIndex - chunkOverlap;
+    const nextStart = endIndex - chunkOverlap;
     
     // Prevent infinite loops if overlap size exceeds remaining length or creates no progress
-    if (startIndex >= endIndex || chunkSize <= chunkOverlap) {
+    if (nextStart <= startIndex) {
       startIndex = endIndex;
+    } else {
+      startIndex = nextStart;
     }
   }
 

@@ -23,38 +23,57 @@ function getDriveClient() {
   return google.drive({ version: "v3", auth });
 }
 
-export interface GoogleDriveFile {
+export interface GoogleDriveItem {
   id: string;
   name: string;
   mimeType: string;
   size?: string;
   createdTime?: string;
+  isFolder: boolean;
 }
 
 /**
- * Lists all files in a specific Google Drive folder.
+ * Lists the immediate children (files + folders) of a specific Google Drive folder.
+ * This is a single-level listing — no recursion. Ideal for a browsable, paginated UI.
  */
-export async function listDriveFiles(folderId: string): Promise<GoogleDriveFile[]> {
+export async function listDriveChildren(folderId: string): Promise<GoogleDriveItem[]> {
   try {
     const drive = getDriveClient();
-    const query = `'${folderId}' in parents and trashed = false`;
-    
-    const response = await drive.files.list({
-      q: query,
-      fields: "files(id, name, mimeType, size, createdTime)",
-      pageSize: 100,
+    const allItems: GoogleDriveItem[] = [];
+    let pageToken: string | undefined = undefined;
+
+    do {
+      const response: any = await drive.files.list({
+        q: `'${folderId}' in parents and trashed = false`,
+        fields: "nextPageToken, files(id, name, mimeType, size, createdTime)",
+        pageSize: 100,
+        orderBy: "folder,name",
+        pageToken,
+      });
+
+      const files = response.data.files || [];
+      for (const file of files) {
+        allItems.push({
+          id: file.id || "",
+          name: file.name || "Unnamed",
+          mimeType: file.mimeType || "application/octet-stream",
+          size: file.size || undefined,
+          createdTime: file.createdTime || undefined,
+          isFolder: file.mimeType === "application/vnd.google-apps.folder",
+        });
+      }
+      pageToken = response.data.nextPageToken || undefined;
+    } while (pageToken);
+
+    // Sort: folders first, then files alphabetically
+    allItems.sort((a, b) => {
+      if (a.isFolder !== b.isFolder) return a.isFolder ? -1 : 1;
+      return a.name.localeCompare(b.name);
     });
 
-    const files = response.data.files || [];
-    return files.map((f) => ({
-      id: f.id || "",
-      name: f.name || "Unnamed File",
-      mimeType: f.mimeType || "application/octet-stream",
-      size: f.size || undefined,
-      createdTime: f.createdTime || undefined,
-    }));
+    return allItems;
   } catch (error) {
-    console.error("Error listing Google Drive files:", error);
+    console.error("Error listing Google Drive children:", error);
     throw error;
   }
 }

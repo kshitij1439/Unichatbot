@@ -9,7 +9,7 @@ export const qdrant = new QdrantClient({
 });
 
 export const COLLECTION_NAME = "university_papers";
-export const EMBEDDING_DIMENSION = 768; // Dimension of Gemini 'text-embedding-004'
+export const EMBEDDING_DIMENSION = 3072; // Dimension of Gemini 'gemini-embedding-001'
 
 /**
  * Ensures that the target collection exists in Qdrant.
@@ -27,6 +27,16 @@ export async function ensureCollectionExists() {
           distance: "Cosine",
         },
       });
+    }
+
+    // Always ensure the payload index for documentId exists (required for filtered deletion)
+    try {
+      await qdrant.createPayloadIndex(COLLECTION_NAME, {
+        field_name: "documentId",
+        field_schema: "keyword",
+      });
+    } catch (indexError) {
+      // Ignore if index already exists or is being created
     }
   } catch (error) {
     console.error("Error checking or creating Qdrant collection:", error);
