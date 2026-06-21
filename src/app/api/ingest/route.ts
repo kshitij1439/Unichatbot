@@ -1,7 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { Document } from "@prisma/client";
 import { listDriveChildren, downloadDriveFile } from "@/lib/gdrive";
+
+interface DbDocument {
+  id: string;
+  name: string;
+  fileId: string | null;
+  url: string | null;
+  mimeType: string | null;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 import { uploadBuffer } from "@/lib/cloudinary";
 import { parsePdf, chunkText } from "@/lib/parser";
 import { getEmbedding } from "@/lib/gemini";
@@ -41,8 +51,8 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    const dbDocMap = new Map<string | null, Document>(
-      dbDocuments.map((doc: Document) => [doc.fileId, doc])
+    const dbDocMap = new Map<string | null, DbDocument>(
+      dbDocuments.map((doc: DbDocument) => [doc.fileId, doc])
     );
 
     // 4. Map drive items to response items
@@ -83,7 +93,7 @@ export async function GET(req: NextRequest) {
       const localDocs = await prisma.document.findMany({
         where: { fileId: null },
       });
-      localOnly = localDocs.map((doc: Document) => ({
+      localOnly = localDocs.map((doc: DbDocument) => ({
         id: null,
         name: doc.name,
         mimeType: doc.mimeType || "application/pdf",
