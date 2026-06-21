@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { Document } from "@prisma/client";
 import { listDriveChildren, downloadDriveFile } from "@/lib/gdrive";
 import { uploadBuffer } from "@/lib/cloudinary";
 import { parsePdf, chunkText } from "@/lib/parser";
@@ -40,7 +41,9 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    const dbDocMap = new Map(dbDocuments.map((doc) => [doc.fileId, doc]));
+    const dbDocMap = new Map<string | null, Document>(
+      dbDocuments.map((doc: Document) => [doc.fileId, doc])
+    );
 
     // 4. Map drive items to response items
     const items = driveItems.map((item) => {
@@ -80,7 +83,7 @@ export async function GET(req: NextRequest) {
       const localDocs = await prisma.document.findMany({
         where: { fileId: null },
       });
-      localOnly = localDocs.map((doc) => ({
+      localOnly = localDocs.map((doc: Document) => ({
         id: null,
         name: doc.name,
         mimeType: doc.mimeType || "application/pdf",
