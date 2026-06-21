@@ -134,7 +134,7 @@ export async function POST(req: NextRequest) {
         );
         if (uniqueDocsWithUrls.length > 0) {
           sourcesFooter = "\n\n---\n**Sources Cited:**\n" + uniqueDocsWithUrls
-            .map((doc, idx) => `- [${doc.name}](${doc.url})`)
+            .map((doc: { id: string; name: string; url: string | null }, idx: number) => `- [${doc.name}](${doc.url})`)
             .join("\n");
         }
       }
