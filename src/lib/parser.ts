@@ -1,16 +1,30 @@
-import { PDFParse } from "pdf-parse";
-import path from "path";
-import { pathToFileURL } from "url";
+// Shim browser-only globals for Node.js environments (especially Node.js < 22)
+if (typeof globalThis.DOMMatrix === "undefined") {
+  (globalThis as any).DOMMatrix = class DOMMatrix {};
+}
 
-// Dynamically locate and set the pdfjs worker path as a file:// URL (required on Windows)
-const workerPath = path.resolve(process.cwd(), "node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs");
-PDFParse.setWorker(pathToFileURL(workerPath).href);
+let cachedPDFParse: any = null;
+
+async function getPDFParse() {
+  if (!cachedPDFParse) {
+    const { PDFParse } = await import("pdf-parse");
+    const path = await import("path");
+    const { pathToFileURL } = await import("url");
+
+    // Dynamically locate and set the pdfjs worker path as a file:// URL (required on Windows)
+    const workerPath = path.resolve(process.cwd(), "node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs");
+    PDFParse.setWorker(pathToFileURL(workerPath).href);
+    cachedPDFParse = PDFParse;
+  }
+  return cachedPDFParse;
+}
 
 /**
  * Extracts raw text from a PDF Buffer.
  */
 export async function parsePdf(buffer: Buffer): Promise<{ text: string; pagesCount: number }> {
   try {
+    const PDFParse = await getPDFParse();
     const uint8Array = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
     const parser = new PDFParse({ data: uint8Array });
     const result = await parser.getText();
