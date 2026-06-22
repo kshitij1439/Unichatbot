@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { MessageSquare, Plus, Trash2, Database, MessageCircle, Loader2 } from "lucide-react";
+import { MessageSquare, Plus, Trash2, Database, MessageCircle, Loader2, X } from "lucide-react";
 
 interface ChatSession {
   id: string;
@@ -16,6 +16,8 @@ interface SidebarProps {
   showDocManager: boolean;
   onToggleDocManager: (show: boolean) => void;
   refreshTrigger?: number;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 export default function Sidebar({
@@ -24,6 +26,8 @@ export default function Sidebar({
   showDocManager,
   onToggleDocManager,
   refreshTrigger = 0,
+  isOpen = false,
+  onClose,
 }: SidebarProps) {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [loading, setLoading] = useState(false);
@@ -71,7 +75,9 @@ export default function Sidebar({
   };
 
   return (
-    <aside className="w-80 shrink-0 border-r border-zinc-900 bg-zinc-950/80 backdrop-blur-xl flex flex-col h-full text-zinc-300 select-none">
+    <aside className={`fixed inset-y-0 left-0 z-40 w-80 shrink-0 border-r border-zinc-900 bg-zinc-950/95 backdrop-blur-xl flex flex-col h-full text-zinc-300 select-none transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${
+      isOpen ? "translate-x-0" : "-translate-x-full"
+    }`}>
       {/* Header / Brand */}
       <div className="p-4 border-b border-zinc-900 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -83,6 +89,15 @@ export default function Sidebar({
             <span className="text-[10px] text-zinc-500 font-medium">SPPU Study Assistant</span>
           </div>
         </div>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="md:hidden p-1.5 rounded-lg border border-zinc-850 hover:bg-zinc-900 text-zinc-400 hover:text-white transition"
+            title="Close menu"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {/* Primary Action Buttons */}

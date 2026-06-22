@@ -15,6 +15,7 @@ import {
   ChevronRight,
   Home,
   ArrowLeft,
+  Menu,
 } from "lucide-react";
 
 interface DriveItem {
@@ -37,9 +38,10 @@ interface BreadcrumbItem {
 
 interface DocManagerProps {
   onDocumentIngested?: () => void;
+  onToggleSidebar?: () => void;
 }
 
-export default function DocManager({ onDocumentIngested }: DocManagerProps) {
+export default function DocManager({ onDocumentIngested, onToggleSidebar }: DocManagerProps) {
   const [items, setItems] = useState<DriveItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [ingestingId, setIngestingId] = useState<string | null>(null);
@@ -281,18 +283,29 @@ export default function DocManager({ onDocumentIngested }: DocManagerProps) {
     <div className="flex flex-col gap-5 h-full text-zinc-100">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
-        <div>
-          <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-            <Database className="w-5 h-5 text-indigo-400" /> Paper Database
-          </h2>
-          <p className="text-xs text-zinc-400">
-            Browse Google Drive folders, ingest exam papers, or upload PDFs locally.
-          </p>
+        <div className="flex items-center gap-2 min-w-0">
+          {onToggleSidebar && (
+            <button
+              onClick={onToggleSidebar}
+              className="md:hidden p-1.5 rounded-lg border border-zinc-800 hover:bg-zinc-850 text-zinc-400 hover:text-white transition mr-1 shrink-0"
+              title="Open menu"
+            >
+              <Menu className="w-4 h-4" />
+            </button>
+          )}
+          <div className="min-w-0">
+            <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2 truncate">
+              <Database className="w-5 h-5 text-indigo-400 shrink-0" /> Paper Database
+            </h2>
+            <p className="text-xs text-zinc-400 truncate">
+              Browse Google Drive folders, ingest exam papers, or upload PDFs locally.
+            </p>
+          </div>
         </div>
         <button
           onClick={() => fetchItems(currentFolderId)}
           disabled={loading}
-          className="p-1.5 rounded-lg border border-zinc-800 hover:bg-zinc-850 text-zinc-400 hover:text-white transition disabled:opacity-50"
+          className="p-1.5 rounded-lg border border-zinc-800 hover:bg-zinc-850 text-zinc-400 hover:text-white transition disabled:opacity-50 shrink-0"
           title="Refresh current folder"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
@@ -442,7 +455,8 @@ export default function DocManager({ onDocumentIngested }: DocManagerProps) {
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-650 hover:bg-indigo-600 disabled:opacity-40 text-xs font-semibold text-white shadow-lg shadow-indigo-950/20 transition"
                         >
                           <FolderOpen className="w-3.5 h-3.5" />
-                          Ingest Folder
+                          <span className="hidden sm:inline">Ingest Folder</span>
+                          <span className="sm:hidden">Ingest</span>
                         </button>
                       )}
                     </div>
@@ -517,11 +531,20 @@ export default function DocManager({ onDocumentIngested }: DocManagerProps) {
                           ) : (
                             <Play className="w-3.5 h-3.5" />
                           )}
-                          {file.status === "COMPLETED"
-                            ? "Re-ingest"
-                            : file.status === "PROCESSING" && ingestingId !== file.id
-                            ? "Retry"
-                            : "Ingest"}
+                          <span className="hidden sm:inline">
+                            {file.status === "COMPLETED"
+                              ? "Re-ingest"
+                              : file.status === "PROCESSING" && ingestingId !== file.id
+                              ? "Retry"
+                              : "Ingest"}
+                          </span>
+                          <span className="sm:hidden">
+                            {file.status === "COMPLETED"
+                              ? "Redo"
+                              : file.status === "PROCESSING" && ingestingId !== file.id
+                              ? "Retry"
+                              : "Ingest"}
+                          </span>
                         </button>
                       )}
                     </div>
