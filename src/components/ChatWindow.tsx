@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Send, Bot, User, Loader2, Sparkles, HelpCircle, Menu } from "lucide-react";
+import { Send, Bot, User, Loader2, Sparkles, HelpCircle, Menu, FileText, ExternalLink, Brain, ChevronDown, ChevronRight } from "lucide-react";
 
 interface Message {
   id: string;
@@ -21,7 +21,12 @@ export default function ChatWindow({ sessionId, onSessionStarted, onToggleSideba
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [fetchingMessages, setFetchingMessages] = useState(false);
+  const [expandedThoughts, setExpandedThoughts] = useState<Record<string, boolean>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const toggleThought = (msgId: string) => {
+    setExpandedThoughts((prev) => ({ ...prev, [msgId]: !prev[msgId] }));
+  };
 
   // Fetch messages when session changes
   useEffect(() => {
@@ -159,17 +164,43 @@ export default function ChatWindow({ sessionId, onSessionStarted, onToggleSideba
         if (part.startsWith("[") && part.includes("](") && part.endsWith(")")) {
           const linkText = part.substring(1, part.indexOf("]"));
           const linkUrl = part.substring(part.indexOf("](") + 2, part.length - 1);
-          return (
-            <a
-              key={pIdx}
-              href={linkUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-indigo-400 hover:text-indigo-300 underline font-semibold transition-colors duration-150"
-            >
-              {linkText}
-            </a>
-          );
+
+          const isPdf = linkText.toLowerCase().endsWith(".pdf") || linkText.includes("/");
+          if (isPdf) {
+            const linkParts = linkText.split("/");
+            const fileName = linkParts.pop() || "";
+            const subject = linkParts.pop() || "";
+            const cleanSubject = subject.replace(/_/g, " ").replace(/-/g, " ").trim();
+            const cleanFileName = fileName.replace(/_/g, " ").replace(/-/g, " ").replace(/\.pdf$/i, "").trim();
+            const badgeLabel = cleanSubject ? `${cleanSubject} (${cleanFileName})` : cleanFileName;
+
+            return (
+              <a
+                key={pIdx}
+                href={linkUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 pl-1.5 pr-2.5 py-0.5 rounded bg-zinc-950/60 hover:bg-zinc-900/80 active:bg-zinc-850 border border-zinc-850 border-l-2 border-l-indigo-500 text-zinc-350 hover:text-indigo-300 text-xs font-medium transition-all duration-200 align-middle mx-1 shadow-md shadow-zinc-950/20 group/link"
+                title={linkText}
+              >
+                <FileText className="w-3.5 h-3.5 text-indigo-400 group-hover/link:text-indigo-350 transition-colors" />
+                <span className="truncate max-w-[200px] md:max-w-[300px]">{badgeLabel}</span>
+              </a>
+            );
+          } else {
+            return (
+              <a
+                key={pIdx}
+                href={linkUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-zinc-800/60 hover:bg-zinc-850 border border-zinc-700/50 hover:border-zinc-650 text-zinc-300 hover:text-white text-xs font-medium transition-all duration-150 align-middle mx-1 shadow-sm group/link"
+              >
+                <span className="truncate max-w-[150px]">{linkText}</span>
+                <ExternalLink className="w-3 h-3 text-zinc-500 group-hover/link:text-zinc-300 transition-colors ml-0.5" />
+              </a>
+            );
+          }
         }
 
         // Check for bold text: **text**
@@ -300,11 +331,50 @@ export default function ChatWindow({ sessionId, onSessionStarted, onToggleSideba
                         : "bg-indigo-650/90 border-indigo-600 text-white shadow-indigo-950/20"
                     }`}
                   >
-                    {isAi ? (
-                      <div className="prose prose-invert max-w-none">
-                        {renderMessageContent(msg.content)}
-                      </div>
-                    ) : (
+                    {isAi ? (() => {
+                      const hasThought = msg.content.includes("<thought>") && msg.content.includes("</thought>");
+                      let thoughtContent = "";
+                      let mainContent = msg.content;
+
+                      if (hasThought) {
+                        const startIdx = msg.content.indexOf("<thought>") + "<thought>".length;
+                        const endIdx = msg.content.indexOf("</thought>");
+                        thoughtContent = msg.content.substring(startIdx, endIdx).trim();
+                        mainContent = msg.content.substring(endIdx + "</thought>".length).trim();
+                      }
+
+                      const isExpanded = !!expandedThoughts[msg.id];
+
+                      return (
+                        <div className="flex flex-col">
+                          {hasThought && (
+                            <div className="flex flex-col mb-1.5 select-none">
+                              <button
+                                onClick={() => toggleThought(msg.id)}
+                                className="inline-flex items-center gap-1.5 py-1 px-2 -ml-1 rounded-md text-[10px] font-semibold text-zinc-400 hover:text-zinc-200 bg-zinc-900/10 hover:bg-zinc-900/40 border border-zinc-900/20 hover:border-zinc-800 transition-all w-fit cursor-pointer align-middle"
+                              >
+                                <Brain className="w-3.5 h-3.5 text-indigo-400 animate-pulse-subtle" />
+                                <span>{isExpanded ? "Hide Thinking Process" : "Show Thinking Process"}</span>
+                                {isExpanded ? (
+                                  <ChevronDown className="w-3 h-3 text-zinc-500" />
+                                ) : (
+                                  <ChevronRight className="w-3 h-3 text-zinc-500" />
+                                )}
+                              </button>
+                              
+                              {isExpanded && (
+                                <div className="mt-2 pl-3 pr-2 py-2 border-l-2 border-indigo-500/20 bg-zinc-950/40 rounded-r-lg text-[11px] text-zinc-400 font-sans leading-relaxed whitespace-pre-wrap select-text max-w-full overflow-hidden mb-2 shadow-inner">
+                                  {thoughtContent}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          <div className="prose prose-invert max-w-none">
+                            {renderMessageContent(mainContent)}
+                          </div>
+                        </div>
+                      );
+                    })() : (
                       <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                     )}
                   </div>
