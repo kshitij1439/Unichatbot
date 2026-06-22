@@ -43,6 +43,8 @@ export default function DocManager({ onDocumentIngested }: DocManagerProps) {
   const [items, setItems] = useState<DriveItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [ingestingId, setIngestingId] = useState<string | null>(null);
+  const [ingestingFolderId, setIngestingFolderId] = useState<string | null>(null);
+  const [folderIngestProgress, setFolderIngestProgress] = useState<{ current: number; total: number } | null>(null);
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -98,28 +100,85 @@ export default function DocManager({ onDocumentIngested }: DocManagerProps) {
     }
   };
 
-  const handleIngest = async (fileId: string) => {
+  const getPathString = () => {
+    const pathParts = breadcrumbs.slice(1).map((b) => b.name);
+    return pathParts.join("/");
+  };
+
+  const handleIngest = async (fileId: string, customPath?: string) => {
     setIngestingId(fileId);
     setError(null);
     try {
+      const pathVal = customPath !== undefined ? customPath : getPathString();
       const res = await fetch("/api/ingest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileId }),
+        body: JSON.stringify({ fileId, path: pathVal }),
       });
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || "Ingestion failed.");
+        return false;
       } else {
         // Refresh current folder
         await fetchItems(currentFolderId);
         if (onDocumentIngested) onDocumentIngested();
+        return true;
       }
     } catch (err) {
       console.error(err);
       setError("Network error occurred during ingestion.");
+      return false;
     } finally {
       setIngestingId(null);
+    }
+  };
+
+  const handleIngestFolder = async (folderId: string, folderName: string) => {
+    setIngestingFolderId(folderId);
+    setFolderIngestProgress(null);
+    setError(null);
+    try {
+      const res = await fetch(`/api/ingest?folderId=${encodeURIComponent(folderId)}`);
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Failed to retrieve folder contents for ingestion.");
+        setIngestingFolderId(null);
+        return;
+      }
+      
+      const filesToIngest = (data.items || []).filter(
+        (item: DriveItem) => !item.isFolder && item.id
+      );
+      
+      if (filesToIngest.length === 0) {
+        setError("No files found in this folder to ingest.");
+        setIngestingFolderId(null);
+        return;
+      }
+
+      const parentPath = getPathString();
+      const folderPath = parentPath ? `${parentPath}/${folderName}` : folderName;
+
+      setFolderIngestProgress({ current: 0, total: filesToIngest.length });
+
+      for (let i = 0; i < filesToIngest.length; i++) {
+        const file = filesToIngest[i];
+        setFolderIngestProgress({ current: i + 1, total: filesToIngest.length });
+        const success = await handleIngest(file.id!, folderPath);
+        if (!success) {
+          console.warn(`Failed to ingest file ${file.name} in folder queue.`);
+        }
+      }
+      
+      await fetchItems(currentFolderId);
+      if (onDocumentIngested) onDocumentIngested();
+    } catch (err) {
+      console.error(err);
+      setError("Failed to process folder ingestion queue.");
+    } finally {
+      setIngestingFolderId(null);
+      setFolderIngestProgress(null);
     }
   };
 
@@ -343,22 +402,51 @@ export default function DocManager({ onDocumentIngested }: DocManagerProps) {
                   Folders ({folders.length})
                 </h4>
                 {folders.map((folder) => (
-                  <button
+                  <div
                     key={folder.id}
-                    onClick={() => navigateToFolder(folder.id!, folder.name)}
-                    className="group flex items-center gap-3 p-3 rounded-xl border border-zinc-900 bg-zinc-900/10 hover:border-indigo-500/30 hover:bg-indigo-500/5 transition-all duration-200 text-left w-full"
+                    className="group flex items-center justify-between p-3 rounded-xl border border-zinc-900 bg-zinc-900/10 hover:border-indigo-500/30 hover:bg-indigo-500/5 transition-all duration-200"
                   >
-                    <div className="w-9 h-9 rounded-lg bg-indigo-500/10 flex items-center justify-center shrink-0 border border-indigo-500/20 text-indigo-400 group-hover:bg-indigo-500/20 transition-colors">
-                      <FolderOpen className="w-5 h-5" />
+                    <button
+                      onClick={() => navigateToFolder(folder.id!, folder.name)}
+                      disabled={ingestingFolderId !== null || ingestingId !== null}
+                      className="flex items-center gap-3 min-w-0 flex-1 text-left"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-indigo-500/10 flex items-center justify-center shrink-0 border border-indigo-500/20 text-indigo-400 group-hover:bg-indigo-500/20 transition-colors">
+                        <FolderOpen className="w-5 h-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-zinc-200 truncate group-hover:text-white transition-colors">
+                          {folder.name}
+                        </p>
+                        <p className="text-[10px] text-zinc-500">
+                          {ingestingFolderId === folder.id && folderIngestProgress
+                            ? `Ingesting queue (${folderIngestProgress.current}/${folderIngestProgress.total})...`
+                            : "Click to browse contents"}
+                        </p>
+                      </div>
+                    </button>
+
+                    <div className="flex items-center gap-1.5 ml-3 shrink-0">
+                      {ingestingFolderId === folder.id ? (
+                        <span className="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-xs font-semibold text-indigo-400">
+                          <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                          {folderIngestProgress ? `${Math.round((folderIngestProgress.current / folderIngestProgress.total) * 100)}%` : "0%"}
+                        </span>
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleIngestFolder(folder.id!, folder.name);
+                          }}
+                          disabled={ingestingFolderId !== null || ingestingId !== null || uploading}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-650 hover:bg-indigo-600 disabled:opacity-40 text-xs font-semibold text-white shadow-lg shadow-indigo-950/20 transition"
+                        >
+                          <FolderOpen className="w-3.5 h-3.5" />
+                          Ingest Folder
+                        </button>
+                      )}
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-zinc-200 truncate group-hover:text-white transition-colors">
-                        {folder.name}
-                      </p>
-                      <p className="text-[10px] text-zinc-500">Click to browse contents</p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-indigo-400 transition-colors shrink-0" />
-                  </button>
+                  </div>
                 ))}
               </>
             )}

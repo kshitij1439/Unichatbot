@@ -129,6 +129,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     fileId = body.fileId;
+    const pathVal = body.path;
 
     if (!fileId) {
       return NextResponse.json({ error: "fileId parameter is required" }, { status: 400 });
@@ -148,7 +149,10 @@ export async function POST(req: NextRequest) {
       
       document = await prisma.document.update({
         where: { id: document.id },
-        data: { status: "PROCESSING" },
+        data: { 
+          status: "PROCESSING",
+          ...(pathVal !== undefined ? { path: pathVal } : {}),
+        },
       });
     } else {
       // Create new document entry
@@ -157,6 +161,7 @@ export async function POST(req: NextRequest) {
           fileId,
           name: "Pending download...",
           status: "PROCESSING",
+          path: pathVal || null,
         },
       });
     }

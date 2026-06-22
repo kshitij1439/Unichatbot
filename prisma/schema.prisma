@@ -16,6 +16,7 @@ model Document {
   url       String? // Cloudinary URL
   mimeType  String?
   status    String   @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  path      String?  // Google Drive folder path (breadcrumbs)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   chunks    Chunk[]

@@ -110,31 +110,39 @@ export async function POST(req: NextRequest) {
           new Set(searchResults.map((res: any) => res.payload?.documentId).filter(Boolean))
         ) as string[];
 
-        // Fetch Cloudinary URLs and names for these documents
+        // Fetch Cloudinary URLs, paths, and names for these documents
         const documents = await prisma.document.findMany({
           where: { id: { in: docIds } },
-          select: { id: true, name: true, url: true },
+          select: { id: true, name: true, url: true, path: true },
         });
 
-        const docUrlMap = new Map<string, string | null>(
-          documents.map((d: { id: string; name: string; url: string | null }) => [d.id, d.url])
+        const docMetaMap = new Map<string, { url: string | null; fullName: string }>(
+          documents.map((d: { id: string; name: string; url: string | null; path: string | null }) => {
+            const fullName = d.path ? `${d.path}/${d.name}` : d.name;
+            return [d.id, { url: d.url, fullName }];
+          })
         );
 
         context = searchResults
-          .map((res: any, idx) => {
+          .map((res: any) => {
             const payload = res.payload;
-            const docUrl = docUrlMap.get(payload?.documentId) || "";
-            return `[Source ${idx + 1}: ${payload?.docName || "Unknown Doc"}] (URL: ${docUrl})\nContent:\n${payload?.content || ""}\n`;
+            const meta = docMetaMap.get(payload?.documentId);
+            const docUrl = meta?.url || "";
+            const docFullName = meta?.fullName || payload?.docName || "Unknown Doc";
+            return `[Document: ${docFullName}] (URL: ${docUrl})\nContent:\n${payload?.content || ""}\n`;
           })
           .join("\n---\n");
 
-        // Construct a clean, clickable sources footer
+        // Construct a clean, clickable sources footer using path-prefixed document names
         const uniqueDocsWithUrls = documents.filter(
-          (d: { id: string; name: string; url: string | null }) => d.url
+          (d: { id: string; name: string; url: string | null; path: string | null }) => d.url
         );
         if (uniqueDocsWithUrls.length > 0) {
           sourcesFooter = "\n\n---\n**Sources Cited:**\n" + uniqueDocsWithUrls
-            .map((doc: { id: string; name: string; url: string | null }, idx: number) => `- [${doc.name}](${doc.url})`)
+            .map((d: { id: string; name: string; url: string | null; path: string | null }) => {
+              const docFullName = d.path ? `${d.path}/${d.name}` : d.name;
+              return `- [${docFullName}](${d.url})`;
+            })
             .join("\n");
         }
       }

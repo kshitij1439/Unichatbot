@@ -39,7 +39,7 @@ export async function generateChatResponse(
 You help students study and learn from university exam papers, lectures, and resources.
 Use the provided EXAM PAPER CONTEXT below to answer the user's question. 
 If the context doesn't contain the answer, use your general knowledge, but prioritize details in the context.
-Always cite your sources. When you refer to details from a source (e.g. Source 1, Source 2), format the citation inline exactly as \`[Source 1]\` or \`[Source 2]\` at the end of the sentence or bullet point. Do not construct markdown hyperlinks inside your response text; simply use the bracketed source index, e.g. \`[Source 1]\`.
+Always cite your sources inline using markdown hyperlinks. When you refer to details from a document, format the citation inline exactly as \`[FolderPath/FileName.pdf](URL)\` at the end of the sentence or bullet point, using the exact path-prefixed document name and URL provided for that document in the EXAM PAPER CONTEXT. Never use index numbers like Source 1 or generic labels.
 Keep your tone academic, encouraging, and supportive.
 
 ---
