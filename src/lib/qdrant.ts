@@ -79,13 +79,26 @@ export async function upsertChunks(
  */
 export async function searchSimilarChunks(
   vector: number[],
-  limit = 5
+  limit = 5,
+  allowedDocumentIds?: string[]
 ) {
   try {
     await ensureCollectionExists();
+
+    // Build filter if allowedDocumentIds is specified
+    const filter = allowedDocumentIds
+      ? {
+          should: allowedDocumentIds.map((id) => ({
+            key: "documentId",
+            match: { value: id },
+          })),
+        }
+      : undefined;
+
     const results = await qdrant.search(COLLECTION_NAME, {
       vector,
       limit,
+      filter,
       with_payload: true,
     });
     return results;

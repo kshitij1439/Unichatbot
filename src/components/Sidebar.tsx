@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { MessageSquare, Plus, Trash2, Database, MessageCircle, Loader2, X } from "lucide-react";
+import { MessageSquare, Plus, Trash2, Database, MessageCircle, Loader2, X, LogOut, User } from "lucide-react";
 
 interface ChatSession {
   id: string;
@@ -11,6 +11,11 @@ interface ChatSession {
 }
 
 interface SidebarProps {
+  user?: {
+    userId: string;
+    email: string;
+    role: string;
+  };
   activeSessionId: string | null;
   onSelectSession: (id: string | null) => void;
   showDocManager: boolean;
@@ -21,6 +26,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({
+  user,
   activeSessionId,
   onSelectSession,
   showDocManager,
@@ -74,6 +80,22 @@ export default function Sidebar({
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      const res = await fetch("/api/auth/logout", { method: "POST" });
+      if (res.ok) {
+        window.location.href = "/login";
+      }
+    } catch (err) {
+      console.error("Error logging out:", err);
+    }
+  };
+
+  const getInitials = (email: string) => {
+    if (!email) return "?";
+    return email.split("@")[0].substring(0, 2).toUpperCase();
+  };
+
   return (
     <aside className={`fixed inset-y-0 left-0 z-40 w-80 shrink-0 border-r border-zinc-900 bg-zinc-950/95 backdrop-blur-xl flex flex-col h-full text-zinc-300 select-none transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${
       isOpen ? "translate-x-0" : "-translate-x-full"
@@ -81,7 +103,7 @@ export default function Sidebar({
       {/* Header / Brand */}
       <div className="p-4 border-b border-zinc-900 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-650 to-indigo-500 flex items-center justify-center font-bold text-white shadow-md shadow-indigo-900/30">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-650 to-indigo-500 flex items-center justify-center font-bold text-white shadow-md shadow-indigo-900/30 animate-pulse">
             U
           </div>
           <div>
@@ -185,10 +207,35 @@ export default function Sidebar({
         )}
       </div>
 
-      {/* Footer Info */}
-      <div className="p-4 border-t border-zinc-900 text-[10px] text-zinc-600 text-center font-mono">
-        v1.0.0 • Connected to Qdrant & Gemini
-      </div>
+      {/* Authenticated Profile Card Footer */}
+      {user && (
+        <div className="p-3.5 border-t border-zinc-900 bg-zinc-950 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600/20 to-violet-650/20 border border-white/[0.08] flex items-center justify-center font-bold text-xs text-blue-400 shrink-0 shadow-inner">
+              {getInitials(user.email)}
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-white truncate leading-snug" title={user.email}>
+                {user.email}
+              </p>
+              <span className={`inline-flex items-center text-[9px] font-bold px-1.5 py-0.5 rounded-md mt-0.5 select-none ${
+                user.role === "MODERATOR" 
+                  ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                  : "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"
+              }`}>
+                {user.role}
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="p-2 rounded-xl border border-zinc-850 hover:border-zinc-800 hover:bg-zinc-900 text-zinc-400 hover:text-rose-400 transition shrink-0"
+            title="Log Out"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
+      )}
     </aside>
   );
 }

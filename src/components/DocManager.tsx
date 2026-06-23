@@ -29,6 +29,7 @@ interface DriveItem {
   status: "COMPLETED" | "PROCESSING" | "PENDING" | "FAILED" | "NOT_INGESTED" | "FOLDER";
   dbId: string | null;
   url: string | null;
+  isGlobal?: boolean;
 }
 
 interface BreadcrumbItem {
@@ -37,11 +38,16 @@ interface BreadcrumbItem {
 }
 
 interface DocManagerProps {
+  user: {
+    userId: string;
+    email: string;
+    role: string;
+  };
   onDocumentIngested?: () => void;
   onToggleSidebar?: () => void;
 }
 
-export default function DocManager({ onDocumentIngested, onToggleSidebar }: DocManagerProps) {
+export default function DocManager({ user, onDocumentIngested, onToggleSidebar }: DocManagerProps) {
   const [items, setItems] = useState<DriveItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [ingestingId, setIngestingId] = useState<string | null>(null);
@@ -51,6 +57,9 @@ export default function DocManager({ onDocumentIngested, onToggleSidebar }: DocM
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Toggle for Global vs Personal uploads (Moderator only)
+  const [isGlobalUpload, setIsGlobalUpload] = useState(true);
 
   // Folder navigation state
   const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([
@@ -112,10 +121,12 @@ export default function DocManager({ onDocumentIngested, onToggleSidebar }: DocM
     setError(null);
     try {
       const pathVal = customPath !== undefined ? customPath : getPathString();
+      const globalFlag = user.role === "MODERATOR" ? isGlobalUpload : false;
+
       const res = await fetch("/api/ingest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileId, path: pathVal }),
+        body: JSON.stringify({ fileId, path: pathVal, isGlobal: globalFlag }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -189,6 +200,9 @@ export default function DocManager({ onDocumentIngested, onToggleSidebar }: DocM
     setError(null);
     const formData = new FormData();
     formData.append("file", file);
+    
+    const globalFlag = user.role === "MODERATOR" ? isGlobalUpload : false;
+    formData.append("isGlobal", String(globalFlag));
 
     try {
       const res = await fetch("/api/upload", {
@@ -318,6 +332,21 @@ export default function DocManager({ onDocumentIngested, onToggleSidebar }: DocM
           <div className="flex-1">
             <span className="font-semibold">Error:</span> {error}
           </div>
+        </div>
+      )}
+
+      {user.role === "MODERATOR" && (
+        <div className="flex items-center gap-2.5 p-3.5 bg-zinc-900/30 border border-zinc-850 rounded-xl">
+          <input
+            id="global-upload-toggle"
+            type="checkbox"
+            checked={isGlobalUpload}
+            onChange={(e) => setIsGlobalUpload(e.target.checked)}
+            className="w-4.5 h-4.5 rounded border-zinc-800 text-indigo-650 focus:ring-indigo-650/40 bg-zinc-950 cursor-pointer"
+          />
+          <label htmlFor="global-upload-toggle" className="text-xs text-zinc-300 font-semibold cursor-pointer select-none">
+            Upload / Ingest as a <span className="bg-gradient-to-r from-amber-400 to-amber-500 bg-clip-text text-transparent font-extrabold">Global Knowledge Source</span> (available to all students)
+          </label>
         </div>
       )}
 
@@ -498,6 +527,14 @@ export default function DocManager({ onDocumentIngested, onToggleSidebar }: DocM
                             {file.size
                               ? `${(parseInt(file.size) / 1024 / 1024).toFixed(2)} MB`
                               : "Local Upload"}
+                          </span>
+                          <span className="text-zinc-700 text-[10px]">•</span>
+                          <span className={`inline-flex items-center text-[9px] font-extrabold px-1.5 py-0.5 rounded-md ${
+                            file.isGlobal
+                              ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                              : "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"
+                          }`}>
+                            {file.isGlobal ? "Global" : "Personal"}
                           </span>
                           <span className="text-zinc-700 text-[10px]">•</span>
                           {getStatusBadge(file.status)}

@@ -1,18 +1,50 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import ChatWindow from "@/components/ChatWindow";
 import DocManager from "@/components/DocManager";
+import { Loader2 } from "lucide-react";
+
+export interface UserSession {
+  userId: string;
+  email: string;
+  role: string;
+}
 
 export default function Home() {
+  const router = useRouter();
+  const [user, setUser] = useState<UserSession | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [showDocManager, setShowDocManager] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  // Authenticate user on mount
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => {
+        if (!res.ok) throw new Error("Not authenticated");
+        return res.json();
+      })
+      .then((data) => {
+        if (data.authenticated && data.user) {
+          setUser(data.user);
+        } else {
+          router.replace("/login");
+        }
+      })
+      .catch(() => {
+        router.replace("/login");
+      })
+      .finally(() => {
+        setAuthLoading(false);
+      });
+  }, [router]);
+
   const handleDocumentIngested = () => {
-    // Increment refresh trigger to reload sidebar/session lists if needed
     setRefreshTrigger((prev) => prev + 1);
   };
 
@@ -30,10 +62,22 @@ export default function Home() {
     setIsSidebarOpen(false); // Close sidebar on mobile tab switch
   };
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen w-screen bg-[#090b11] flex flex-col items-center justify-center text-slate-100 font-sans">
+        <Loader2 className="w-10 h-10 text-blue-500 animate-spin mb-4" />
+        <p className="text-sm text-slate-400 font-medium animate-pulse">Initializing secure session...</p>
+      </div>
+    );
+  }
+
+  if (!user) return null;
+
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-zinc-950 font-sans antialiased text-zinc-200 relative">
       {/* Sidebar Navigation */}
       <Sidebar
+        user={user}
         activeSessionId={activeSessionId}
         onSelectSession={handleSelectSession}
         showDocManager={showDocManager}
@@ -56,6 +100,7 @@ export default function Home() {
         {showDocManager ? (
           <div className="flex-1 p-4 md:p-8 overflow-y-auto max-w-4xl mx-auto w-full">
             <DocManager 
+              user={user}
               onDocumentIngested={handleDocumentIngested} 
               onToggleSidebar={() => setIsSidebarOpen(true)}
             />
