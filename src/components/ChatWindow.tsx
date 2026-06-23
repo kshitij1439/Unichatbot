@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { Send, Bot, User, Loader2, Sparkles, HelpCircle, Menu, FileText, ExternalLink, Brain, ChevronDown, ChevronRight } from "lucide-react";
+import { MascotViewport } from "./MascotViewport";
+import { EyeExpression, ActiveAnimation } from "../types";
 
 interface Message {
   id: string;
@@ -16,13 +18,44 @@ interface ChatWindowProps {
   onToggleSidebar?: () => void;
 }
 
+const BotIcon = ({ isLive, expression, animation }: { isLive?: boolean; expression?: EyeExpression; animation?: ActiveAnimation }) => {
+  if (isLive) {
+    return (
+      <div className="w-8 h-8 flex-shrink-0 relative overflow-hidden">
+        <MascotViewport
+          expression={expression}
+          animation={animation}
+          backdropColor="transparent"
+        />
+      </div>
+    );
+  }
+  return (
+    <svg className="w-6 h-6" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="50" cy="42" rx="30" ry="20" fill="#eef2ff" />
+      <ellipse cx="50" cy="42" rx="22" ry="11" fill="#e0e7ff" />
+      <ellipse cx="42" cy="42" rx="3" ry="5" fill="#4f46e5" />
+      <ellipse cx="58" cy="42" rx="3" ry="5" fill="#4f46e5" />
+      <rect x="32" y="14" width="2" height="10" fill="#eef2ff" />
+      <circle cx="33" cy="12" r="3" fill="#eef2ff" />
+      <rect x="66" y="14" width="2" height="10" fill="#eef2ff" />
+      <circle cx="67" cy="12" r="3" fill="#eef2ff" />
+      <path d="M50 88 C58 75 58 64 50 60 C42 64 42 75 50 88 Z" fill="#eef2ff" />
+    </svg>
+  );
+};
+
 export default function ChatWindow({ sessionId, onSessionStarted, onToggleSidebar }: ChatWindowProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [fetchingMessages, setFetchingMessages] = useState(false);
   const [expandedThoughts, setExpandedThoughts] = useState<Record<string, boolean>>({});
+  const [expression, setExpression] = useState<EyeExpression>("neutral");
+  const [animation, setAnimation] = useState<ActiveAnimation>("float");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const lastAssistantMessageId = [...messages].reverse().find((m) => m.role === "assistant")?.id;
 
   const toggleThought = (msgId: string) => {
     setExpandedThoughts((prev) => ({ ...prev, [msgId]: !prev[msgId] }));
@@ -69,6 +102,10 @@ export default function ChatWindow({ sessionId, onSessionStarted, onToggleSideba
     const userMessageContent = input.trim();
     setInput("");
     setLoading(true);
+    
+    // Set mascot to thinking state
+    setExpression("thinking");
+    setAnimation("breathe");
 
     // Append user message immediately for responsiveness
     const tempUserMessage: Message = {
@@ -175,6 +212,14 @@ export default function ChatWindow({ sessionId, onSessionStarted, onToggleSideba
                   const filtered = prev.filter((m) => m.id !== tempAssistantId);
                   return [...filtered, data.assistantMessage];
                 });
+                
+                // Mascot happy reaction on completion
+                setExpression("happy");
+                setAnimation("wave");
+                setTimeout(() => {
+                  setExpression("neutral");
+                  setAnimation("float");
+                }, 4000);
               } else if (event === "error") {
                 throw new Error(data.error || "Unknown stream error");
               }
@@ -186,6 +231,14 @@ export default function ChatWindow({ sessionId, onSessionStarted, onToggleSideba
       }
     } catch (err: any) {
       console.error("Chat error:", err);
+      // Mascot error reaction
+      setExpression("blink");
+      setAnimation("none");
+      setTimeout(() => {
+        setExpression("neutral");
+        setAnimation("float");
+      }, 3000);
+      
       // Clean any temporary messages and add error message
       setMessages((prev) => {
         const filtered = prev.filter(
@@ -335,7 +388,13 @@ export default function ChatWindow({ sessionId, onSessionStarted, onToggleSideba
               <Menu className="w-4 h-4" />
             </button>
           )}
-          <Bot className="w-5 h-5 text-indigo-400" />
+          <div className="w-8 h-8 flex-shrink-0 relative overflow-hidden">
+            <MascotViewport
+              expression={expression}
+              animation={animation}
+              backdropColor="transparent"
+            />
+          </div>
           <span className="text-sm font-semibold text-white">
             {sessionId ? "Study Session" : "New AI Conversation"}
           </span>
@@ -356,15 +415,19 @@ export default function ChatWindow({ sessionId, onSessionStarted, onToggleSideba
         ) : messages.length === 0 ? (
           // Welcome / Guide Panel
           <div className="flex-1 flex flex-col items-center justify-center max-w-2xl mx-auto text-center gap-6">
-            <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shadow-xl shadow-indigo-950/20">
-              <Bot className="w-8 h-8" />
+            <div className="w-32 h-32 md:w-40 md:h-40 flex-shrink-0 relative">
+              <MascotViewport
+                expression={expression}
+                animation={animation}
+                backdropColor="transparent"
+              />
             </div>
             <div>
               <h2 className="text-xl font-bold text-white tracking-tight">
                 Welcome to SPPU University Chatbot!
               </h2>
               <p className="text-sm text-zinc-400 mt-2 leading-relaxed">
-                Analyze previous university exam papers, lectures, and resources to prepare smarter. 
+                Analyze previous university exam papers, lectures, and resources to prepare smarter.
                 I extract text, map it into a Qdrant Vector Database, and use Gemini to guide your study.
               </p>
             </div>
@@ -398,27 +461,33 @@ export default function ChatWindow({ sessionId, onSessionStarted, onToggleSideba
                 >
                   {/* Icon Avatar */}
                   <div
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border shadow-md ${
-                      isAi
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border shadow-md ${isAi
                         ? "bg-indigo-500/10 border-indigo-500/20 text-indigo-400 shadow-indigo-950/20"
                         : "bg-zinc-800 border-zinc-700 text-zinc-300"
-                    }`}
+                      }`}
                   >
-                    {isAi ? <Bot className="w-5 h-5" /> : <User className="w-5 h-5" />}
+                    {isAi ? (
+                      <BotIcon
+                        isLive={msg.id === lastAssistantMessageId}
+                        expression={expression}
+                        animation={animation}
+                      />
+                    ) : (
+                      <User className="w-5 h-5" />
+                    )}
                   </div>
 
                   {/* Message Balloon */}
                   <div
-                    className={`max-w-[85%] md:max-w-[80%] rounded-2xl px-3.5 py-2.5 md:px-4 md:py-3 border shadow-lg ${
-                      isAi
+                    className={`max-w-[85%] md:max-w-[80%] rounded-2xl px-3.5 py-2.5 md:px-4 md:py-3 border shadow-lg ${isAi
                         ? "bg-zinc-950/30 border-zinc-900 text-zinc-100 shadow-zinc-950/30"
                         : "bg-indigo-650/90 border-indigo-600 text-white shadow-indigo-950/20"
-                    }`}
+                      }`}
                   >
                     {isAi ? (() => {
                       const hasThoughtStart = msg.content.includes("<thought>");
                       const hasThoughtEnd = msg.content.includes("</thought>");
-                      
+
                       const hasThought = hasThoughtStart;
                       let thoughtContent = "";
                       let mainContent = msg.content;
@@ -450,11 +519,11 @@ export default function ChatWindow({ sessionId, onSessionStarted, onToggleSideba
                               >
                                 <Brain className="w-3.5 h-3.5 text-indigo-400 animate-pulse-subtle" />
                                 <span>
-                                  {!hasThoughtEnd 
-                                    ? "Thinking..." 
-                                    : isExpanded 
-                                    ? "Hide Thinking Process" 
-                                    : "Show Thinking Process"}
+                                  {!hasThoughtEnd
+                                    ? "Thinking..."
+                                    : isExpanded
+                                      ? "Hide Thinking Process"
+                                      : "Show Thinking Process"}
                                 </span>
                                 {isExpanded ? (
                                   <ChevronDown className="w-3 h-3 text-zinc-500" />
@@ -462,7 +531,7 @@ export default function ChatWindow({ sessionId, onSessionStarted, onToggleSideba
                                   <ChevronRight className="w-3 h-3 text-zinc-500" />
                                 )}
                               </button>
-                              
+
                               {isExpanded && (
                                 <div className="mt-2 pl-3 pr-2 py-2 border-l-2 border-indigo-500/20 bg-zinc-950/40 rounded-r-lg text-[11px] text-zinc-400 font-sans leading-relaxed whitespace-pre-wrap select-text max-w-full overflow-hidden mb-2 shadow-inner">
                                   {thoughtContent || "Analyzing question and context..."}
@@ -487,8 +556,12 @@ export default function ChatWindow({ sessionId, onSessionStarted, onToggleSideba
 
             {loading && (
               <div className="flex gap-3 md:gap-4 items-start">
-                <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 animate-pulse">
-                  <Bot className="w-5 h-5" />
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border shadow-md bg-indigo-500/10 border-indigo-500/20 text-indigo-400 shadow-indigo-950/20">
+                  <BotIcon
+                    isLive={true}
+                    expression={expression}
+                    animation={animation}
+                  />
                 </div>
                 <div className="bg-zinc-950/20 border border-zinc-900 rounded-2xl px-4 py-3.5 flex items-center gap-2">
                   <Loader2 className="w-4 h-4 text-indigo-400 animate-spin" />

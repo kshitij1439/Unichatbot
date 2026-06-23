@@ -4,12 +4,19 @@ import { uploadBuffer } from "@/lib/cloudinary";
 import { parsePdf, chunkText } from "@/lib/parser";
 import { getEmbedding } from "@/lib/gemini";
 import { upsertChunks } from "@/lib/qdrant";
+import { getAuthenticatedUser } from "@/lib/auth";
 import crypto from "crypto";
 
 export async function POST(req: NextRequest) {
   try {
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
+    const isGlobal = formData.get("isGlobal") === "true";
 
     if (!file) {
       return NextResponse.json({ error: "No file provided in the upload request" }, { status: 400 });
@@ -21,6 +28,9 @@ export async function POST(req: NextRequest) {
 
     console.log(`Starting manual upload processing for file: ${file.name}`);
 
+    // If moderator and global, userId is null. Otherwise (student or non-global), associate with active user.
+    const targetUserId = (user.role === "MODERATOR" && isGlobal) ? null : user.userId;
+
     // Convert file to Buffer
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
@@ -31,6 +41,7 @@ export async function POST(req: NextRequest) {
         name: file.name,
         mimeType: file.type,
         status: "PROCESSING",
+        userId: targetUserId,
       },
     });
 

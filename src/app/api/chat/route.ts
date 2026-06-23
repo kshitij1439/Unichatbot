@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getEmbedding, generateChatResponseStream } from "@/lib/gemini";
 import { searchSimilarChunks } from "@/lib/qdrant";
+import { getAuthenticatedUser } from "@/lib/auth";
 
 /**
  * GET: Lists all chat sessions, or fetches messages of a specific session.
@@ -11,10 +12,15 @@ export async function GET(req: NextRequest) {
   const sessionId = searchParams.get("sessionId");
 
   try {
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     if (sessionId) {
-      // Fetch messages for a specific session
-      const session = await prisma.chatSession.findUnique({
-        where: { id: sessionId },
+      // Fetch messages for a specific session scoped to user
+      const session = await prisma.chatSession.findFirst({
+        where: { id: sessionId, userId: user.userId },
         include: {
           messages: {
             orderBy: { createdAt: "asc" },
@@ -28,8 +34,9 @@ export async function GET(req: NextRequest) {
 
       return NextResponse.json(session);
     } else {
-      // List all sessions
+      // List all sessions scoped to user
       const sessions = await prisma.chatSession.findMany({
+        where: { userId: user.userId },
         orderBy: { updatedAt: "desc" },
         include: {
           messages: {
@@ -55,6 +62,11 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { message, sessionId: incomingSessionId } = await req.json();
 
     if (!message || !message.trim()) {
@@ -79,12 +91,15 @@ export async function POST(req: NextRequest) {
           if (!sessionId || sessionId === "new") {
             const generatedTitle = message.length > 30 ? message.substring(0, 30) + "..." : message;
             session = await prisma.chatSession.create({
-              data: { title: generatedTitle },
+              data: { 
+                title: generatedTitle,
+                userId: user.userId,
+              },
             });
             sessionId = session.id;
           } else {
-            session = await prisma.chatSession.findUnique({
-              where: { id: sessionId },
+            session = await prisma.chatSession.findFirst({
+              where: { id: sessionId, userId: user.userId },
             });
             if (!session) {
               sendEvent("error", { error: "Chat session not found" });
@@ -116,9 +131,21 @@ export async function POST(req: NextRequest) {
           let context = "";
           let sourcesFooter = "";
           try {
+            // Get all allowed document IDs (global + local to this user)
+            const allowedDocs = await prisma.document.findMany({
+              where: {
+                OR: [
+                  { userId: null },
+                  { userId: user.userId },
+                ],
+              },
+              select: { id: true },
+            });
+            const allowedDocIds = allowedDocs.map((d) => d.id);
+
             const queryEmbedding = await getEmbedding(message);
             console.log("Searching Qdrant for similar chunks...");
-            const searchResults = await searchSimilarChunks(queryEmbedding, 4);
+            const searchResults = await searchSimilarChunks(queryEmbedding, 4, allowedDocIds);
 
             if (searchResults && searchResults.length > 0) {
               const docIds = Array.from(
@@ -239,6 +266,19 @@ export async function DELETE(req: NextRequest) {
   }
 
   try {
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const session = await prisma.chatSession.findFirst({
+      where: { id: sessionId, userId: user.userId },
+    });
+
+    if (!session) {
+      return NextResponse.json({ error: "Chat session not found or unauthorized" }, { status: 404 });
+    }
+
     await prisma.chatSession.delete({
       where: { id: sessionId },
     });

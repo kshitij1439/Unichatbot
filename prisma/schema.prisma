@@ -9,6 +9,17 @@ datasource db {
   provider = "postgresql"
 }
 
+model User {
+  id        String        @id @default(uuid())
+  email     String        @unique
+  password  String
+  salt      String
+  role      String        @default("STUDENT") // "STUDENT" or "MODERATOR"
+  createdAt DateTime      @default(now())
+  documents Document[]
+  sessions  ChatSession[]
+}
+
 model Document {
   id        String   @id @default(uuid())
   name      String
@@ -20,6 +31,9 @@ model Document {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   chunks    Chunk[]
+
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Chunk {
@@ -40,6 +54,9 @@ model ChatSession {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   messages  Message[]
+
+  userId    String?
+  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Message {

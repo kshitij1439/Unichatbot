@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { listDriveChildren, downloadDriveFile } from "@/lib/gdrive";
+import { getAuthenticatedUser } from "@/lib/auth";
 
 interface DbDocument {
   id: string;
@@ -11,6 +12,7 @@ interface DbDocument {
   status: string;
   createdAt: Date;
   updatedAt: Date;
+  userId: string | null;
 }
 import { uploadBuffer } from "@/lib/cloudinary";
 import { parsePdf, chunkText } from "@/lib/parser";
@@ -38,16 +40,25 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     // 1. Fetch immediate children from Google Drive (single-level, fast)
     const driveItems = await listDriveChildren(folderId);
 
     // 2. Collect all file IDs (non-folder) to batch-check ingestion status
     const fileIds = driveItems.filter((item) => !item.isFolder).map((item) => item.id);
 
-    // 3. Fetch documents recorded in Prisma
+    // 3. Fetch documents recorded in Prisma (scoped to global + user's local documents)
     const dbDocuments = await prisma.document.findMany({
       where: {
         fileId: { in: fileIds },
+        OR: [
+          { userId: null },
+          { userId: user.userId },
+        ],
       },
     });
 
@@ -84,14 +95,21 @@ export async function GET(req: NextRequest) {
         status: dbDoc ? dbDoc.status : "NOT_INGESTED",
         dbId: dbDoc ? dbDoc.id : null,
         url: dbDoc ? dbDoc.url : null,
+        isGlobal: dbDoc ? !dbDoc.userId : false,
       };
     });
 
-    // 5. Also include any locally-uploaded documents (no fileId) when showing root
+    // 5. Also include any locally-uploaded documents (no fileId) when showing root (scoped to global + user's local)
     let localOnly: any[] = [];
     if (folderId === rootFolderId) {
       const localDocs = await prisma.document.findMany({
-        where: { fileId: null },
+        where: {
+          fileId: null,
+          OR: [
+            { userId: null },
+            { userId: user.userId },
+          ],
+        },
       });
       localOnly = localDocs.map((doc: DbDocument) => ({
         id: null,
@@ -104,6 +122,7 @@ export async function GET(req: NextRequest) {
         status: doc.status,
         dbId: doc.id,
         url: doc.url,
+        isGlobal: !doc.userId,
       }));
     }
 
@@ -127,17 +146,28 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   let fileId: string | undefined = undefined;
   try {
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
     fileId = body.fileId;
     const pathVal = body.path;
+    const isGlobal = body.isGlobal === true;
 
     if (!fileId) {
       return NextResponse.json({ error: "fileId parameter is required" }, { status: 400 });
     }
 
-    // 1. Check if the file is already being processed or exists
-    let document = await prisma.document.findUnique({
-      where: { fileId },
+    const targetUserId = (user.role === "MODERATOR" && isGlobal) ? null : user.userId;
+
+    // 1. Check if the file is already processed/exists for this scope
+    let document = await prisma.document.findFirst({
+      where: {
+        fileId,
+        userId: targetUserId,
+      },
     });
 
     if (document) {
@@ -162,6 +192,7 @@ export async function POST(req: NextRequest) {
           name: "Pending download...",
           status: "PROCESSING",
           path: pathVal || null,
+          userId: targetUserId,
         },
       });
     }
