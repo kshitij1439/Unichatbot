@@ -93,28 +93,112 @@ export default function ChatWindow({ sessionId, onSessionStarted, onToggleSideba
         throw new Error("Failed to send message");
       }
 
-      const data = await res.json();
-      
-      // Update session ID if it was newly created
-      if (!sessionId && data.sessionId) {
-        onSessionStarted(data.sessionId);
+      if (!res.body) {
+        throw new Error("No response body received");
       }
 
-      // Replace temp message and append response
-      setMessages((prev) => {
-        const filtered = prev.filter((m) => m.id !== "temp-user-id");
-        return [...filtered, data.userMessage, data.assistantMessage];
-      });
-    } catch (err) {
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      const tempAssistantId = "temp-assistant-id";
+      let hasAddedAssistantPlaceholder = false;
+      let syncedSessionId = sessionId;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        // Split by SSE double-newline
+        const parts = buffer.split("\n\n");
+        // Save the last partial chunk back to the buffer
+        buffer = parts.pop() || "";
+
+        for (const part of parts) {
+          if (!part.trim()) continue;
+
+          // Parse event and data lines
+          const lines = part.split("\n");
+          let event = "";
+          let dataStr = "";
+
+          for (const line of lines) {
+            if (line.startsWith("event:")) {
+              event = line.substring(6).trim();
+            } else if (line.startsWith("data:")) {
+              dataStr = line.substring(5).trim();
+            }
+          }
+
+          if (dataStr) {
+            try {
+              const data = JSON.parse(dataStr);
+
+              if (event === "session") {
+                // Sync session and replace user message with actual DB representation
+                syncedSessionId = data.sessionId;
+                if (!sessionId) {
+                  onSessionStarted(data.sessionId);
+                }
+                setMessages((prev) => {
+                  const filtered = prev.filter((m) => m.id !== "temp-user-id");
+                  return [...filtered, data.userMessage];
+                });
+              } else if (event === "token") {
+                // Initialize placeholder assistant message on first token
+                if (!hasAddedAssistantPlaceholder) {
+                  hasAddedAssistantPlaceholder = true;
+                  setMessages((prev) => [
+                    ...prev,
+                    {
+                      id: tempAssistantId,
+                      role: "assistant",
+                      content: data,
+                      createdAt: new Date().toISOString(),
+                    },
+                  ]);
+                } else {
+                  // Append subsequent tokens to content
+                  setMessages((prev) =>
+                    prev.map((msg) =>
+                      msg.id === tempAssistantId
+                        ? { ...msg, content: msg.content + data }
+                        : msg
+                    )
+                  );
+                }
+              } else if (event === "done") {
+                // Replace placeholder message with final assistant message saved in DB
+                setMessages((prev) => {
+                  const filtered = prev.filter((m) => m.id !== tempAssistantId);
+                  return [...filtered, data.assistantMessage];
+                });
+              } else if (event === "error") {
+                throw new Error(data.error || "Unknown stream error");
+              }
+            } catch (jsonErr) {
+              console.error("Error parsing event JSON:", jsonErr);
+            }
+          }
+        }
+      }
+    } catch (err: any) {
       console.error("Chat error:", err);
-      // Append an error message from system
-      const errorMessage: Message = {
-        id: "error-id",
-        role: "assistant",
-        content: "Sorry, I encountered an error processing that request. Please verify your Gemini API key and try again.",
-        createdAt: new Date().toISOString(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
+      // Clean any temporary messages and add error message
+      setMessages((prev) => {
+        const filtered = prev.filter(
+          (m) => m.id !== "temp-user-id" && m.id !== "temp-assistant-id"
+        );
+        const errorMessage: Message = {
+          id: `error-${Date.now()}`,
+          role: "assistant",
+          content: `Sorry, I encountered an error: ${err.message || "Unknown error occurred"}. Please try again.`,
+          createdAt: new Date().toISOString(),
+        };
+        return [...filtered, errorMessage];
+      });
     } finally {
       setLoading(false);
     }
@@ -332,18 +416,29 @@ export default function ChatWindow({ sessionId, onSessionStarted, onToggleSideba
                     }`}
                   >
                     {isAi ? (() => {
-                      const hasThought = msg.content.includes("<thought>") && msg.content.includes("</thought>");
+                      const hasThoughtStart = msg.content.includes("<thought>");
+                      const hasThoughtEnd = msg.content.includes("</thought>");
+                      
+                      const hasThought = hasThoughtStart;
                       let thoughtContent = "";
                       let mainContent = msg.content;
 
-                      if (hasThought) {
+                      if (hasThoughtStart) {
                         const startIdx = msg.content.indexOf("<thought>") + "<thought>".length;
-                        const endIdx = msg.content.indexOf("</thought>");
-                        thoughtContent = msg.content.substring(startIdx, endIdx).trim();
-                        mainContent = msg.content.substring(endIdx + "</thought>".length).trim();
+                        if (hasThoughtEnd) {
+                          const endIdx = msg.content.indexOf("</thought>");
+                          thoughtContent = msg.content.substring(startIdx, endIdx).trim();
+                          mainContent = msg.content.substring(endIdx + "</thought>".length).trim();
+                        } else {
+                          thoughtContent = msg.content.substring(startIdx).trim();
+                          mainContent = "";
+                        }
                       }
 
-                      const isExpanded = !!expandedThoughts[msg.id];
+                      // Auto expand while actively streaming the thinking block, otherwise use state
+                      const isExpanded = expandedThoughts[msg.id] !== undefined
+                        ? !!expandedThoughts[msg.id]
+                        : (hasThoughtStart && !hasThoughtEnd);
 
                       return (
                         <div className="flex flex-col">
@@ -354,7 +449,13 @@ export default function ChatWindow({ sessionId, onSessionStarted, onToggleSideba
                                 className="inline-flex items-center gap-1.5 py-1 px-2 -ml-1 rounded-md text-[10px] font-semibold text-zinc-400 hover:text-zinc-200 bg-zinc-900/10 hover:bg-zinc-900/40 border border-zinc-900/20 hover:border-zinc-800 transition-all w-fit cursor-pointer align-middle"
                               >
                                 <Brain className="w-3.5 h-3.5 text-indigo-400 animate-pulse-subtle" />
-                                <span>{isExpanded ? "Hide Thinking Process" : "Show Thinking Process"}</span>
+                                <span>
+                                  {!hasThoughtEnd 
+                                    ? "Thinking..." 
+                                    : isExpanded 
+                                    ? "Hide Thinking Process" 
+                                    : "Show Thinking Process"}
+                                </span>
                                 {isExpanded ? (
                                   <ChevronDown className="w-3 h-3 text-zinc-500" />
                                 ) : (
@@ -364,14 +465,16 @@ export default function ChatWindow({ sessionId, onSessionStarted, onToggleSideba
                               
                               {isExpanded && (
                                 <div className="mt-2 pl-3 pr-2 py-2 border-l-2 border-indigo-500/20 bg-zinc-950/40 rounded-r-lg text-[11px] text-zinc-400 font-sans leading-relaxed whitespace-pre-wrap select-text max-w-full overflow-hidden mb-2 shadow-inner">
-                                  {thoughtContent}
+                                  {thoughtContent || "Analyzing question and context..."}
                                 </div>
                               )}
                             </div>
                           )}
-                          <div className="prose prose-invert max-w-none">
-                            {renderMessageContent(mainContent)}
-                          </div>
+                          {(!hasThought || hasThoughtEnd || mainContent) && (
+                            <div className="prose prose-invert max-w-none">
+                              {renderMessageContent(mainContent)}
+                            </div>
+                          )}
                         </div>
                       );
                     })() : (

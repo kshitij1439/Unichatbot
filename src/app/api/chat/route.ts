@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getEmbedding, generateChatResponse } from "@/lib/gemini";
+import { getEmbedding, generateChatResponseStream } from "@/lib/gemini";
 import { searchSimilarChunks } from "@/lib/qdrant";
 
 /**
@@ -61,133 +61,167 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Message content is required" }, { status: 400 });
     }
 
-    let sessionId = incomingSessionId;
-    let session;
+    const encoder = new TextEncoder();
 
-    // 1. Create session if it doesn't exist
-    if (!sessionId || sessionId === "new") {
-      const generatedTitle = message.length > 30 ? message.substring(0, 30) + "..." : message;
-      session = await prisma.chatSession.create({
-        data: { title: generatedTitle },
-      });
-      sessionId = session.id;
-    } else {
-      session = await prisma.chatSession.findUnique({
-        where: { id: sessionId },
-      });
-      if (!session) {
-        return NextResponse.json({ error: "Chat session not found" }, { status: 404 });
-      }
-    }
+    const responseStream = new ReadableStream({
+      async start(controller) {
+        const sendEvent = (event: string, data: any) => {
+          controller.enqueue(
+            encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
+          );
+        };
 
-    // 2. Save user message to database
-    const userMessage = await prisma.message.create({
-      data: {
-        role: "user",
-        content: message,
-        sessionId,
-      },
-    });
+        try {
+          let sessionId = incomingSessionId;
+          let session;
 
-    // 3. Update session's updatedAt timestamp
-    await prisma.chatSession.update({
-      where: { id: sessionId },
-      data: { updatedAt: new Date() },
-    });
+          // 1. Create session if it doesn't exist
+          if (!sessionId || sessionId === "new") {
+            const generatedTitle = message.length > 30 ? message.substring(0, 30) + "..." : message;
+            session = await prisma.chatSession.create({
+              data: { title: generatedTitle },
+            });
+            sessionId = session.id;
+          } else {
+            session = await prisma.chatSession.findUnique({
+              where: { id: sessionId },
+            });
+            if (!session) {
+              sendEvent("error", { error: "Chat session not found" });
+              controller.close();
+              return;
+            }
+          }
 
-    // 4. Retrieve context from Qdrant DB
-    console.log("Generating query embedding for vector search...");
-    let context = "";
-    let sourcesFooter = "";
-    try {
-      const queryEmbedding = await getEmbedding(message);
-      console.log("Searching Qdrant for similar chunks...");
-      const searchResults = await searchSimilarChunks(queryEmbedding, 4);
+          // 2. Save user message to database
+          const userMessage = await prisma.message.create({
+            data: {
+              role: "user",
+              content: message,
+              sessionId,
+            },
+          });
 
-      if (searchResults && searchResults.length > 0) {
-        // Collect unique document IDs from search results
-        const docIds = Array.from(
-          new Set(searchResults.map((res: any) => res.payload?.documentId).filter(Boolean))
-        ) as string[];
+          // 3. Update session's updatedAt timestamp
+          await prisma.chatSession.update({
+            where: { id: sessionId },
+            data: { updatedAt: new Date() },
+          });
 
-        // Fetch Cloudinary URLs, paths, and names for these documents
-        const documents = await prisma.document.findMany({
-          where: { id: { in: docIds } },
-          select: { id: true, name: true, url: true, path: true },
-        });
+          // Send session details & user message immediately so the client can render it
+          sendEvent("session", { sessionId, userMessage });
 
-        const docMetaMap = new Map<string, { url: string | null; fullName: string }>(
-          documents.map((d: { id: string; name: string; url: string | null; path: string | null }) => {
-            const fullName = d.path ? `${d.path}/${d.name}` : d.name;
-            return [d.id, { url: d.url, fullName }];
-          })
-        );
+          // 4. Retrieve context from Qdrant DB
+          console.log("Generating query embedding for vector search...");
+          let context = "";
+          let sourcesFooter = "";
+          try {
+            const queryEmbedding = await getEmbedding(message);
+            console.log("Searching Qdrant for similar chunks...");
+            const searchResults = await searchSimilarChunks(queryEmbedding, 4);
 
-        context = searchResults
-          .map((res: any) => {
-            const payload = res.payload;
-            const meta = docMetaMap.get(payload?.documentId);
-            const docUrl = meta?.url || "";
-            const docFullName = meta?.fullName || payload?.docName || "Unknown Doc";
-            return `[Document: ${docFullName}] (URL: ${docUrl})\nContent:\n${payload?.content || ""}\n`;
-          })
-          .join("\n---\n");
+            if (searchResults && searchResults.length > 0) {
+              const docIds = Array.from(
+                new Set(searchResults.map((res: any) => res.payload?.documentId).filter(Boolean))
+              ) as string[];
 
-        // Construct a clean, clickable sources footer using path-prefixed document names
-        const uniqueDocsWithUrls = documents.filter(
-          (d: { id: string; name: string; url: string | null; path: string | null }) => d.url
-        );
-        if (uniqueDocsWithUrls.length > 0) {
-          sourcesFooter = "\n\n---\n**Sources Cited:**\n" + uniqueDocsWithUrls
-            .map((d: { id: string; name: string; url: string | null; path: string | null }) => {
-              const docFullName = d.path ? `${d.path}/${d.name}` : d.name;
-              return `- [${docFullName}](${d.url})`;
-            })
-            .join("\n");
+              const documents = await prisma.document.findMany({
+                where: { id: { in: docIds } },
+                select: { id: true, name: true, url: true, path: true },
+              });
+
+              const docMetaMap = new Map<string, { url: string | null; fullName: string }>(
+                documents.map((d: { id: string; name: string; url: string | null; path: string | null }) => {
+                  const fullName = d.path ? `${d.path}/${d.name}` : d.name;
+                  return [d.id, { url: d.url, fullName }];
+                })
+              );
+
+              context = searchResults
+                .map((res: any) => {
+                  const payload = res.payload;
+                  const meta = docMetaMap.get(payload?.documentId);
+                  const docUrl = meta?.url || "";
+                  const docFullName = meta?.fullName || payload?.docName || "Unknown Doc";
+                  return `[Document: ${docFullName}] (URL: ${docUrl})\nContent:\n${payload?.content || ""}\n`;
+                })
+                .join("\n---\n");
+
+              const uniqueDocsWithUrls = documents.filter(
+                (d: { id: string; name: string; url: string | null; path: string | null }) => d.url
+              );
+              if (uniqueDocsWithUrls.length > 0) {
+                sourcesFooter = "\n\n---\n**Sources Cited:**\n" + uniqueDocsWithUrls
+                  .map((d: { id: string; name: string; url: string | null; path: string | null }) => {
+                    const docFullName = d.path ? `${d.path}/${d.name}` : d.name;
+                    return `- [${docFullName}](${d.url})`;
+                  })
+                  .join("\n");
+              }
+            }
+          } catch (qdrantErr) {
+            console.error("Vector search failed, proceeding without context:", qdrantErr);
+            context = "No specific context could be retrieved from the vector database.";
+          }
+
+          // 5. Fetch history
+          const historyMessages = await prisma.message.findMany({
+            where: {
+              sessionId,
+              NOT: { id: userMessage.id },
+            },
+            orderBy: { createdAt: "asc" },
+          });
+
+          const chatHistory = historyMessages.map((msg: { role: string; content: string }) => ({
+            role: msg.role,
+            content: msg.content,
+          }));
+
+          // 6. Request streaming answer from Gemini
+          console.log("Requesting Gemini chat completion stream...");
+          const resultStream = await generateChatResponseStream(message, chatHistory, context);
+
+          let accumulatedResponse = "";
+          for await (const chunk of resultStream.stream) {
+            const chunkText = chunk.text();
+            accumulatedResponse += chunkText;
+            sendEvent("token", chunkText);
+          }
+
+          const finalResponseContent = accumulatedResponse + sourcesFooter;
+
+          // 7. Save assistant message to DB
+          const assistantMessage = await prisma.message.create({
+            data: {
+              role: "assistant",
+              content: finalResponseContent,
+              sessionId,
+            },
+          });
+
+          sendEvent("done", { assistantMessage });
+        } catch (err: any) {
+          console.error("Stream handling error:", err);
+          sendEvent("error", { error: err.message || "Failed to process chat message stream" });
+        } finally {
+          controller.close();
         }
-      }
-    } catch (qdrantErr) {
-      console.error("Vector search failed, proceeding without context:", qdrantErr);
-      context = "No specific context could be retrieved from the vector database.";
-    }
-
-    // 5. Fetch chat history for Gemini (excluding the newly created user message to prevent duplication in history list)
-    const historyMessages = await prisma.message.findMany({
-      where: {
-        sessionId,
-        NOT: { id: userMessage.id },
-      },
-      orderBy: { createdAt: "asc" },
-    });
-
-    const chatHistory = historyMessages.map((msg: { role: string; content: string }) => ({
-      role: msg.role,
-      content: msg.content,
-    }));
-
-    // 6. Ask Gemini for reply
-    console.log("Requesting Gemini chat completion...");
-    const aiResponseContent = await generateChatResponse(message, chatHistory, context);
-    const finalResponseContent = aiResponseContent + sourcesFooter;
-
-    // 7. Save AI assistant response to database
-    const assistantMessage = await prisma.message.create({
-      data: {
-        role: "assistant",
-        content: finalResponseContent,
-        sessionId,
       },
     });
 
-    return NextResponse.json({
-      sessionId,
-      userMessage,
-      assistantMessage,
+    return new Response(responseStream, {
+      headers: {
+        "Content-Type": "text/event-stream; charset=utf-8",
+        "Cache-Control": "no-cache, no-transform",
+        "Connection": "keep-alive",
+        "X-Accel-Buffering": "no",
+      },
     });
   } catch (error: any) {
-    console.error("Chat API POST error:", error);
+    console.error("Chat API POST setup error:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to process chat message" },
+      { error: error.message || "Failed to initialize stream" },
       { status: 500 }
     );
   }
