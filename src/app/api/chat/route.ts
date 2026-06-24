@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getEmbedding } from "@/lib/gemini";
 import { generateChatResponseStream } from "@/lib/llm";
+import { fetchCircularsFromSppu } from "@/lib/sppu";
 import { searchSimilarChunks } from "@/lib/qdrant";
 import { getAuthenticatedUser } from "@/lib/auth";
 
@@ -191,6 +192,20 @@ export async function POST(req: NextRequest) {
             console.error("Vector search failed, proceeding without context:", qdrantErr);
             context = "No specific context could be retrieved from the vector database.";
           }
+
+          // Fetch circulars context and append to the generation prompt
+          let circularsContext = "No active circulars retrieved.";
+          try {
+            console.log("Fetching SPPU circulars for RAG prompt injection...");
+            const circularsList = await fetchCircularsFromSppu();
+            circularsContext = "ACTIVE UNIVERSITY CIRCULARS & NOTICES:\n" + circularsList.map(c => {
+              return `- [${c.title}](${c.url}) [Category: ${c.category}] (Published Date: ${c.date})\n  Summary: ${c.summary}`;
+            }).join("\n");
+          } catch (circErr) {
+            console.error("Failed to fetch circulars for RAG context:", circErr);
+          }
+
+          context = `\n${circularsContext}\n\n========================\n\nEXAM CHUNKS FROM STUDY DOCUMENTS:\n${context}`;
 
           // 5. Fetch history
           const historyMessages = await prisma.message.findMany({

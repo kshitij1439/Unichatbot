@@ -162,11 +162,10 @@ export async function POST(req: NextRequest) {
 
     const targetUserId = (user.role === "MODERATOR" && isGlobal) ? null : user.userId;
 
-    // 1. Check if the file is already processed/exists for this scope
-    let document = await prisma.document.findFirst({
+    // 1. Check if the file is already processed/exists globally (by unique fileId)
+    let document = await prisma.document.findUnique({
       where: {
         fileId,
-        userId: targetUserId,
       },
     });
 
@@ -182,6 +181,8 @@ export async function POST(req: NextRequest) {
         data: { 
           status: "PROCESSING",
           ...(pathVal !== undefined ? { path: pathVal } : {}),
+          // Shift scope to global (null) if moderator specifies, otherwise retain global status or associate with target
+          userId: targetUserId === null ? null : (document.userId === null ? null : targetUserId),
         },
       });
     } else {
