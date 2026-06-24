@@ -53,6 +53,7 @@ export default function ChatWindow({ sessionId, onSessionStarted, onToggleSideba
   const [expandedThoughts, setExpandedThoughts] = useState<Record<string, boolean>>({});
   const [expression, setExpression] = useState<EyeExpression>("neutral");
   const [animation, setAnimation] = useState<ActiveAnimation>("float");
+  const [selectedModel, setSelectedModel] = useState<"gemini" | "grok">("gemini");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const lastAssistantMessageId = [...messages].reverse().find((m) => m.role === "assistant")?.id;
@@ -123,6 +124,7 @@ export default function ChatWindow({ sessionId, onSessionStarted, onToggleSideba
         body: JSON.stringify({
           message: userMessageContent,
           sessionId: sessionId || "new",
+          model: selectedModel,
         }),
       });
 
@@ -399,10 +401,22 @@ export default function ChatWindow({ sessionId, onSessionStarted, onToggleSideba
             {sessionId ? "Study Session" : "New AI Conversation"}
           </span>
         </div>
-        <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 font-mono">
-          <Sparkles className="w-3.5 h-3.5 text-indigo-400 animate-pulse" />
-          <span className="hidden sm:inline">Powered by Gemini RAG</span>
-          <span className="sm:hidden">RAG</span>
+        <div className="flex items-center gap-3">
+          {/* Model Selector Dropdown */}
+          <select
+            value={selectedModel}
+            onChange={(e) => setSelectedModel(e.target.value as "gemini" | "grok")}
+            className="bg-zinc-950/60 border border-zinc-850 text-[10px] md:text-xs text-zinc-300 font-mono rounded-xl px-2 py-1 md:px-2.5 md:py-1.5 focus:outline-none focus:border-indigo-500/50 hover:bg-zinc-900/50 transition cursor-pointer"
+          >
+            <option value="gemini">Gemini 2.5 Flash</option>
+            <option value="grok">Grok Beta</option>
+          </select>
+
+          <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 font-mono">
+            <Sparkles className="w-3.5 h-3.5 text-indigo-400 animate-pulse" />
+            <span className="hidden sm:inline">Powered by {selectedModel === "grok" ? "Grok" : "Gemini"} RAG</span>
+            <span className="sm:hidden">{selectedModel === "grok" ? "Grok" : "RAG"}</span>
+          </div>
         </div>
       </div>
 

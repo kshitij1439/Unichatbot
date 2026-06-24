@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getEmbedding, generateChatResponseStream } from "@/lib/gemini";
+import { getEmbedding } from "@/lib/gemini";
+import { generateChatResponseStream } from "@/lib/llm";
 import { searchSimilarChunks } from "@/lib/qdrant";
 import { getAuthenticatedUser } from "@/lib/auth";
 
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { message, sessionId: incomingSessionId } = await req.json();
+    const { message, sessionId: incomingSessionId, model } = await req.json();
 
     if (!message || !message.trim()) {
       return NextResponse.json({ error: "Message content is required" }, { status: 400 });
@@ -205,9 +206,14 @@ export async function POST(req: NextRequest) {
             content: msg.content,
           }));
 
-          // 6. Request streaming answer from Gemini
-          console.log("Requesting Gemini chat completion stream...");
-          const resultStream = await generateChatResponseStream(message, chatHistory, context);
+          // 6. Request streaming answer from LLM
+          console.log(`Requesting ${model === "grok" ? "Grok" : "Gemini"} chat completion stream...`);
+          const resultStream = await generateChatResponseStream(
+            message,
+            chatHistory,
+            context,
+            model === "grok" ? "grok" : "gemini"
+          );
 
           let accumulatedResponse = "";
           for await (const chunk of resultStream.stream) {
