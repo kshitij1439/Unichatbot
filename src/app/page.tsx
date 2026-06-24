@@ -67,9 +67,9 @@ export default function Home() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen w-screen bg-[#090b11] flex flex-col items-center justify-center text-slate-100 font-sans">
-        <Loader2 className="w-10 h-10 text-blue-500 animate-spin mb-4" />
-        <p className="text-sm text-slate-400 font-medium animate-pulse">Initializing secure session...</p>
+      <div className="min-h-screen w-screen bg-slate-50 flex flex-col items-center justify-center text-slate-800 font-sans">
+        <Loader2 className="w-10 h-10 text-indigo-600 animate-spin mb-4" />
+        <p className="text-sm text-slate-500 font-bold animate-pulse">Initializing secure session...</p>
       </div>
     );
   }
@@ -77,7 +77,7 @@ export default function Home() {
   if (!user) return null;
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-zinc-950 font-sans antialiased text-zinc-200 relative">
+    <div className="flex h-screen w-screen overflow-hidden bg-white font-sans antialiased text-slate-800 relative">
       {/* Sidebar Navigation */}
       <Sidebar
         user={user}
@@ -94,12 +94,12 @@ export default function Home() {
       {isSidebarOpen && (
         <div
           onClick={() => setIsSidebarOpen(false)}
-          className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm md:hidden"
+          className="fixed inset-0 z-30 bg-black/30 backdrop-blur-sm md:hidden"
         />
       )}
 
       {/* Main Panel */}
-      <main className="flex-1 h-full flex flex-col min-w-0 bg-gradient-to-b from-zinc-900 to-zinc-950">
+      <main className="flex-1 h-full flex flex-col min-w-0 bg-slate-50">
         {activeTab === "docs" ? (
           <div className="flex-1 p-4 md:p-8 overflow-y-auto max-w-4xl mx-auto w-full">
             <DocManager 

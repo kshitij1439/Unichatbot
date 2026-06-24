@@ -263,25 +263,25 @@ export default function DocManager({ user, onDocumentIngested, onToggleSidebar }
     switch (status) {
       case "COMPLETED":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-750 border border-emerald-200">
             <CheckCircle className="w-3.5 h-3.5 mr-1" /> Ingested
           </span>
         );
       case "PROCESSING":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 animate-pulse">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-705 border border-amber-200 animate-pulse">
             <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> Indexing
           </span>
         );
       case "FAILED":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-600 border border-rose-200">
             <AlertCircle className="w-3.5 h-3.5 mr-1" /> Failed
           </span>
         );
       case "NOT_INGESTED":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-zinc-500/10 text-zinc-400 border border-zinc-500/20">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-500 border border-slate-200">
             New
           </span>
         );
@@ -294,24 +294,24 @@ export default function DocManager({ user, onDocumentIngested, onToggleSidebar }
   const files = items.filter((item) => !item.isFolder);
 
   return (
-    <div className="flex flex-col gap-5 h-full text-zinc-100">
+    <div className="flex flex-col gap-5 h-full text-slate-800">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
+      <div className="flex items-center justify-between border-b border-slate-200 pb-4">
         <div className="flex items-center gap-2 min-w-0">
           {onToggleSidebar && (
             <button
               onClick={onToggleSidebar}
-              className="md:hidden p-1.5 rounded-lg border border-zinc-800 hover:bg-zinc-850 text-zinc-400 hover:text-white transition mr-1 shrink-0"
+              className="md:hidden p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-500 hover:text-slate-900 transition mr-1 shrink-0"
               title="Open menu"
             >
               <Menu className="w-4 h-4" />
             </button>
           )}
           <div className="min-w-0">
-            <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2 truncate">
-              <Database className="w-5 h-5 text-indigo-400 shrink-0" /> Paper Database
+            <h2 className="text-xl font-bold text-slate-905 tracking-tight flex items-center gap-2 truncate">
+              <Database className="w-5 h-5 text-[#1a253c] shrink-0" /> Paper Database
             </h2>
-            <p className="text-xs text-zinc-400 truncate">
+            <p className="text-xs text-slate-505 font-semibold truncate">
               Browse Google Drive folders, ingest exam papers, or upload PDFs locally.
             </p>
           </div>
@@ -319,7 +319,7 @@ export default function DocManager({ user, onDocumentIngested, onToggleSidebar }
         <button
           onClick={() => fetchItems(currentFolderId)}
           disabled={loading}
-          className="p-1.5 rounded-lg border border-zinc-800 hover:bg-zinc-850 text-zinc-400 hover:text-white transition disabled:opacity-50 shrink-0"
+          className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-500 hover:text-slate-900 transition disabled:opacity-50 shrink-0"
           title="Refresh current folder"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
@@ -327,25 +327,25 @@ export default function DocManager({ user, onDocumentIngested, onToggleSidebar }
       </div>
 
       {error && (
-        <div className="bg-rose-950/20 border border-rose-900/50 rounded-xl p-3 flex gap-2.5 items-start text-xs text-rose-400">
+        <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 flex gap-2.5 items-start text-xs text-rose-650 font-semibold">
           <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
           <div className="flex-1">
-            <span className="font-semibold">Error:</span> {error}
+            <span className="font-bold">Error:</span> {error}
           </div>
         </div>
       )}
 
       {user.role === "MODERATOR" && (
-        <div className="flex items-center gap-2.5 p-3.5 bg-zinc-900/30 border border-zinc-850 rounded-xl">
+        <div className="flex items-center gap-2.5 p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
           <input
             id="global-upload-toggle"
             type="checkbox"
             checked={isGlobalUpload}
             onChange={(e) => setIsGlobalUpload(e.target.checked)}
-            className="w-4.5 h-4.5 rounded border-zinc-800 text-indigo-650 focus:ring-indigo-650/40 bg-zinc-950 cursor-pointer"
+            className="w-4.5 h-4.5 rounded border-slate-300 text-indigo-650 focus:ring-indigo-650/40 bg-white cursor-pointer"
           />
-          <label htmlFor="global-upload-toggle" className="text-xs text-zinc-300 font-semibold cursor-pointer select-none">
-            Upload / Ingest as a <span className="bg-gradient-to-r from-amber-400 to-amber-500 bg-clip-text text-transparent font-extrabold">Global Knowledge Source</span> (available to all students)
+          <label htmlFor="global-upload-toggle" className="text-xs text-slate-700 font-bold cursor-pointer select-none">
+            Upload / Ingest as a <span className="bg-gradient-to-r from-amber-600 to-amber-700 bg-clip-text text-transparent font-extrabold">Global Knowledge Source</span> (available to all students)
           </label>
         </div>
       )}
@@ -359,8 +359,8 @@ export default function DocManager({ user, onDocumentIngested, onToggleSidebar }
         onClick={triggerFileInput}
         className={`border-2 border-dashed rounded-2xl p-5 text-center cursor-pointer transition flex flex-col items-center justify-center gap-2 ${
           dragActive
-            ? "border-indigo-500 bg-indigo-500/5"
-            : "border-zinc-800 hover:border-zinc-700 bg-zinc-900/30"
+            ? "border-indigo-500 bg-indigo-50"
+            : "border-slate-300 hover:border-slate-400 bg-slate-50/40"
         } ${uploading ? "pointer-events-none opacity-60" : ""}`}
       >
         <input
@@ -372,17 +372,17 @@ export default function DocManager({ user, onDocumentIngested, onToggleSidebar }
         />
         {uploading ? (
           <>
-            <Loader2 className="w-7 h-7 text-indigo-400 animate-spin" />
-            <p className="text-sm font-medium text-zinc-300">Processing and indexing uploaded PDF...</p>
-            <p className="text-xs text-zinc-500">Extracting text &amp; computing embeddings</p>
+            <Loader2 className="w-7 h-7 text-indigo-600 animate-spin" />
+            <p className="text-sm font-semibold text-slate-700">Processing and indexing uploaded PDF...</p>
+            <p className="text-xs text-slate-405 font-bold">Extracting text &amp; computing embeddings</p>
           </>
         ) : (
           <>
-            <UploadCloud className="w-7 h-7 text-zinc-500" />
-            <p className="text-sm font-medium text-zinc-300">
-              Drag &amp; drop a PDF here, or <span className="text-indigo-400">browse</span>
+            <UploadCloud className="w-7 h-7 text-slate-405 animate-bounce" />
+            <p className="text-sm font-bold text-slate-650">
+              Drag &amp; drop a PDF here, or <span className="text-indigo-600 hover:text-indigo-700">browse</span>
             </p>
-            <p className="text-xs text-zinc-500">PDF documents only (up to 10MB)</p>
+            <p className="text-xs text-slate-405 font-bold">PDF documents only (up to 10MB)</p>
           </>
         )}
       </div>
@@ -392,7 +392,7 @@ export default function DocManager({ user, onDocumentIngested, onToggleSidebar }
         {breadcrumbs.length > 1 && (
           <button
             onClick={goBack}
-            className="p-1 rounded-md hover:bg-zinc-800 text-zinc-400 hover:text-white transition mr-1"
+            className="p-1 rounded-md hover:bg-slate-100 text-slate-500 hover:text-slate-900 transition mr-1"
             title="Go back"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -400,13 +400,13 @@ export default function DocManager({ user, onDocumentIngested, onToggleSidebar }
         )}
         {breadcrumbs.map((crumb, idx) => (
           <React.Fragment key={idx}>
-            {idx > 0 && <ChevronRight className="w-3.5 h-3.5 text-zinc-600 shrink-0" />}
+            {idx > 0 && <ChevronRight className="w-3.5 h-3.5 text-slate-350 shrink-0" />}
             <button
               onClick={() => navigateToBreadcrumb(idx)}
               className={`text-xs px-2 py-1 rounded-md transition truncate max-w-[140px] ${
                 idx === breadcrumbs.length - 1
-                  ? "text-white bg-zinc-800 font-semibold"
-                  : "text-zinc-400 hover:text-white hover:bg-zinc-800/50"
+                  ? "text-slate-905 bg-slate-205 font-bold"
+                  : "text-slate-505 hover:text-slate-900 hover:bg-slate-100"
               }`}
               title={crumb.name}
             >
@@ -426,41 +426,41 @@ export default function DocManager({ user, onDocumentIngested, onToggleSidebar }
       <div className="flex-1 overflow-y-auto min-h-0 pr-1 select-none">
         {loading && items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 gap-2">
-            <Loader2 className="w-6 h-6 text-indigo-400 animate-spin" />
-            <span className="text-xs text-zinc-500">Loading folder contents...</span>
+            <Loader2 className="w-6 h-6 text-indigo-600 animate-spin" />
+            <span className="text-xs text-slate-405 font-bold">Loading folder contents...</span>
           </div>
         ) : items.length === 0 ? (
-          <div className="text-center py-10 border border-zinc-900 rounded-xl bg-zinc-950/20">
-            <FileText className="w-8 h-8 text-zinc-650 mx-auto mb-2" />
-            <p className="text-sm text-zinc-400">This folder is empty.</p>
-            <p className="text-xs text-zinc-500 mt-1">Navigate back or upload a PDF above.</p>
+          <div className="text-center py-10 border border-slate-200 rounded-xl bg-slate-50/30">
+            <FileText className="w-8 h-8 text-slate-305 mx-auto mb-2" />
+            <p className="text-sm text-slate-505 font-bold">This folder is empty.</p>
+            <p className="text-xs text-slate-405 font-semibold mt-1">Navigate back or upload a PDF above.</p>
           </div>
         ) : (
           <div className="flex flex-col gap-2">
             {/* Folders Section */}
             {folders.length > 0 && (
               <>
-                <h4 className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mt-1 mb-1">
+                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1 mb-1">
                   Folders ({folders.length})
                 </h4>
                 {folders.map((folder) => (
                   <div
                     key={folder.id}
-                    className="group flex items-center justify-between p-3 rounded-xl border border-zinc-900 bg-zinc-900/10 hover:border-indigo-500/30 hover:bg-indigo-500/5 transition-all duration-200"
+                    className="group flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50/20 hover:border-indigo-500/30 hover:bg-indigo-50/40 transition-all duration-200"
                   >
                     <button
                       onClick={() => navigateToFolder(folder.id!, folder.name)}
                       disabled={ingestingFolderId !== null || ingestingId !== null}
                       className="flex items-center gap-3 min-w-0 flex-1 text-left"
                     >
-                      <div className="w-9 h-9 rounded-lg bg-indigo-500/10 flex items-center justify-center shrink-0 border border-indigo-500/20 text-indigo-400 group-hover:bg-indigo-500/20 transition-colors">
+                      <div className="w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center shrink-0 border border-indigo-100 text-indigo-600 group-hover:bg-indigo-100 transition-colors">
                         <FolderOpen className="w-5 h-5" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-zinc-200 truncate group-hover:text-white transition-colors">
+                        <p className="text-sm font-semibold text-slate-800 truncate group-hover:text-slate-950 transition-colors">
                           {folder.name}
                         </p>
-                        <p className="text-[10px] text-zinc-500">
+                        <p className="text-[10px] text-slate-400 font-medium">
                           {ingestingFolderId === folder.id && folderIngestProgress
                             ? `Ingesting queue (${folderIngestProgress.current}/${folderIngestProgress.total})...`
                             : "Click to browse contents"}
@@ -470,7 +470,7 @@ export default function DocManager({ user, onDocumentIngested, onToggleSidebar }
 
                     <div className="flex items-center gap-1.5 ml-3 shrink-0">
                       {ingestingFolderId === folder.id ? (
-                        <span className="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-xs font-semibold text-indigo-400">
+                        <span className="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-indigo-50 border border-indigo-100 text-xs font-semibold text-indigo-650">
                           <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
                           {folderIngestProgress ? `${Math.round((folderIngestProgress.current / folderIngestProgress.total) * 100)}%` : "0%"}
                         </span>
@@ -481,7 +481,7 @@ export default function DocManager({ user, onDocumentIngested, onToggleSidebar }
                             handleIngestFolder(folder.id!, folder.name);
                           }}
                           disabled={ingestingFolderId !== null || ingestingId !== null || uploading}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-650 hover:bg-indigo-600 disabled:opacity-40 text-xs font-semibold text-white shadow-lg shadow-indigo-950/20 transition"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1a253c] hover:bg-[#253554] disabled:opacity-40 text-xs font-semibold text-white shadow-sm transition"
                         >
                           <FolderOpen className="w-3.5 h-3.5" />
                           <span className="hidden sm:inline">Ingest Folder</span>
@@ -497,46 +497,46 @@ export default function DocManager({ user, onDocumentIngested, onToggleSidebar }
             {/* Files Section */}
             {files.length > 0 && (
               <>
-                <h4 className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mt-3 mb-1">
+                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-3 mb-1">
                   Files ({files.length})
                 </h4>
                 {files.map((file) => (
                   <div
                     key={file.id || file.name}
-                    className="group flex items-center justify-between p-3 rounded-xl border border-zinc-900 bg-zinc-900/10 hover:border-zinc-800 hover:bg-zinc-900/20 transition-all duration-200"
+                    className="group flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50/20 hover:border-slate-300 hover:bg-slate-50/60 transition-all duration-200"
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div
                         className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 border transition-colors ${
                           file.ingested
-                            ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-                            : "bg-zinc-850 border-zinc-800 text-zinc-400 group-hover:text-indigo-400"
+                            ? "bg-emerald-50 border-emerald-100 text-emerald-605"
+                            : "bg-slate-105 border-slate-200 text-slate-500 group-hover:text-indigo-650"
                         }`}
                       >
                         <FileText className="w-5 h-5" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p
-                          className="text-sm font-medium text-zinc-200 truncate group-hover:text-white transition-colors"
+                          className="text-sm font-semibold text-slate-800 truncate group-hover:text-slate-950 transition-colors"
                           title={file.name}
                         >
                           {file.name}
                         </p>
-                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                          <span className="text-[10px] text-zinc-500">
+                        <div className="flex items-center gap-2 mt-0.5 flex-wrap font-medium">
+                          <span className="text-[10px] text-slate-450">
                             {file.size
                               ? `${(parseInt(file.size) / 1024 / 1024).toFixed(2)} MB`
                               : "Local Upload"}
                           </span>
-                          <span className="text-zinc-700 text-[10px]">•</span>
-                          <span className={`inline-flex items-center text-[9px] font-extrabold px-1.5 py-0.5 rounded-md ${
+                          <span className="text-slate-300 text-[10px]">•</span>
+                          <span className={`inline-flex items-center text-[9px] font-bold px-1.5 py-0.5 rounded-md ${
                             file.isGlobal
-                              ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                              : "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"
+                              ? "bg-amber-50 text-amber-700 border border-amber-200"
+                              : "bg-indigo-50 text-indigo-700 border border-indigo-200"
                           }`}>
                             {file.isGlobal ? "Global" : "Personal"}
                           </span>
-                          <span className="text-zinc-700 text-[10px]">•</span>
+                          <span className="text-slate-300 text-[10px]">•</span>
                           {getStatusBadge(file.status)}
                         </div>
                       </div>
@@ -548,20 +548,20 @@ export default function DocManager({ user, onDocumentIngested, onToggleSidebar }
                           href={file.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="p-1.5 rounded-lg border border-zinc-800 hover:bg-zinc-800 text-zinc-400 hover:text-white transition"
+                          className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition"
                           title="View document (Cloudinary)"
                         >
                           <Link2 className="w-4 h-4" />
                         </a>
                       )}
                       {file.ingested && (
-                        <span className="text-[10px] text-emerald-400/60 font-mono">✓ Ready</span>
+                        <span className="text-[10px] text-emerald-600 font-bold mr-1">✓ Ready</span>
                       )}
                       {file.id && (
                         <button
                           onClick={() => handleIngest(file.id!)}
                           disabled={ingestingId !== null || uploading}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-650 hover:bg-indigo-600 disabled:opacity-40 text-xs font-semibold text-white shadow-lg shadow-indigo-950/20 transition"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1a253c] hover:bg-[#253554] disabled:opacity-40 text-xs font-semibold text-white shadow-sm transition"
                         >
                           {ingestingId === file.id ? (
                             <Loader2 className="w-3.5 h-3.5 animate-spin" />

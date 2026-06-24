@@ -63,13 +63,13 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="relative min-h-screen flex items-center justify-center bg-[#090b11] text-slate-100 overflow-hidden font-sans px-4">
+    <main className="relative min-h-screen flex items-center justify-center bg-[#f8f9fa] text-slate-800 overflow-hidden font-sans px-4">
       {/* Decorative ambient background glows */}
-      <div className="absolute top-1/4 left-1/4 w-[300px] h-[300px] bg-blue-600/10 rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-1/4 left-1/4 w-[300px] h-[300px] bg-blue-600/5 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-purple-600/5 rounded-full blur-[120px] pointer-events-none" />
 
       {/* Grid Pattern Overlay */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.12),rgba(255,255,255,0))]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.06),rgba(255,255,255,0))]" />
 
       <div className="w-full max-w-md relative z-10">
         {/* Logo / Brand Header */}
@@ -77,25 +77,25 @@ export default function RegisterPage() {
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-violet-600 shadow-lg shadow-blue-500/20 mb-4 animate-pulse">
             <GraduationCap className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-extrabold tracking-tight text-[#1a253c]">
             Create Account
           </h1>
-          <p className="text-sm text-slate-400 mt-2">
+          <p className="text-sm text-slate-505 mt-2 font-medium">
             Get started learning with SPPU Chatbot
           </p>
         </div>
 
-        {/* Glassmorphic Form Card */}
-        <div className="backdrop-blur-xl bg-white/[0.03] border border-white/[0.08] rounded-2xl shadow-2xl p-8">
+        {/* Clean Light Form Card */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl shadow-xl p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-medium leading-relaxed">
+              <div className="p-3.5 rounded-xl bg-rose-50 text-rose-600 border border-rose-200 text-xs font-semibold leading-relaxed">
                 {error}
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                 Email Address
               </label>
               <div className="relative">
@@ -105,14 +105,14 @@ export default function RegisterPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
-                  className="w-full bg-[#121622] border border-white/[0.06] rounded-xl py-3 pl-11 pr-4 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-11 pr-4 text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-650/10 transition-all"
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                 Password
               </label>
               <div className="relative">
@@ -122,17 +122,17 @@ export default function RegisterPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="At least 6 characters"
-                  className="w-full bg-[#121622] border border-white/[0.06] rounded-xl py-3 pl-11 pr-4 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-11 pr-4 text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-650/10 transition-all"
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                Moderator Passcode <span className="text-[10px] text-slate-500 font-normal lowercase">(Optional)</span>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                Moderator Passcode <span className="text-[10px] text-slate-400 font-normal lowercase">(Optional)</span>
               </label>
-              <p className="text-[10px] text-slate-500 mb-2 leading-snug">
+              <p className="text-[10px] text-slate-400 mb-2 leading-snug">
                 Provide code to sign up as a Moderator to upload Global documents.
               </p>
               <div className="relative">
@@ -142,7 +142,7 @@ export default function RegisterPage() {
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
                   placeholder="Enter signup code if you have one"
-                  className="w-full bg-[#121622] border border-white/[0.06] rounded-xl py-3 pl-11 pr-4 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-11 pr-4 text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-655/10 transition-all"
                 />
               </div>
             </div>
@@ -150,7 +150,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full relative group overflow-hidden bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white rounded-xl py-3 text-sm font-semibold shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full relative bg-[#1a253c] hover:bg-[#253554] text-white rounded-xl py-3 text-sm font-semibold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
@@ -160,18 +160,18 @@ export default function RegisterPage() {
               ) : (
                 <>
                   Create Account
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                  <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
           </form>
 
           {/* Form Footer */}
-          <div className="mt-6 text-center text-xs text-slate-400">
+          <div className="mt-6 text-center text-xs text-slate-500">
             Already have an account?{" "}
             <Link
               href="/login"
-              className="text-blue-400 hover:text-blue-300 font-medium transition-colors ml-1"
+              className="text-blue-600 hover:text-blue-700 font-bold transition-colors ml-1"
             >
               Log in
             </Link>

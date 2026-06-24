@@ -98,24 +98,24 @@ export default function Sidebar({
   };
 
   return (
-    <aside className={`fixed inset-y-0 left-0 z-40 w-80 shrink-0 border-r border-zinc-900 bg-zinc-950/95 backdrop-blur-xl flex flex-col h-full text-zinc-300 select-none transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${
+    <aside className={`fixed inset-y-0 left-0 z-40 w-80 shrink-0 border-r border-slate-200 bg-white flex flex-col h-full text-slate-750 select-none transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${
       isOpen ? "translate-x-0" : "-translate-x-full"
     }`}>
       {/* Header / Brand */}
-      <div className="p-4 border-b border-zinc-900 flex items-center justify-between">
+      <div className="p-4 border-b border-slate-200 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-650 to-indigo-500 flex items-center justify-center font-bold text-white shadow-md shadow-indigo-900/30 animate-pulse">
+          <div className="w-8 h-8 rounded-xl bg-[#1a253c] flex items-center justify-center font-bold text-white shadow-sm animate-pulse">
             U
           </div>
           <div>
-            <h1 className="text-sm font-bold text-white tracking-tight leading-none">UniBot</h1>
-            <span className="text-[10px] text-zinc-500 font-medium">SPPU Study Assistant</span>
+            <h1 className="text-sm font-bold text-slate-900 tracking-tight leading-none">UniBot</h1>
+            <span className="text-[10px] text-slate-500 font-semibold">SPPU Study Assistant</span>
           </div>
         </div>
         {onClose && (
           <button
             onClick={onClose}
-            className="md:hidden p-1.5 rounded-lg border border-zinc-850 hover:bg-zinc-900 text-zinc-400 hover:text-white transition"
+            className="md:hidden p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-500 hover:text-slate-900 transition"
             title="Close menu"
           >
             <X className="w-4 h-4" />
@@ -130,10 +130,10 @@ export default function Sidebar({
             onChangeTab("chat");
             onSelectSession(null);
           }}
-          className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm shadow-lg transition-all active:scale-[0.98] ${
+          className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm shadow-sm transition-all active:scale-[0.98] ${
             activeTab === "chat" && !activeSessionId
-              ? "bg-indigo-650 hover:bg-indigo-600 text-white shadow-indigo-950/30"
-              : "border border-zinc-900 bg-zinc-900/30 hover:border-zinc-800 text-zinc-400 hover:text-white"
+              ? "bg-[#1a253c] hover:bg-[#253554] text-white"
+              : "border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900"
           }`}
         >
           <Plus className="w-4 h-4" /> New Study Chat
@@ -143,14 +143,14 @@ export default function Sidebar({
           onClick={() => onChangeTab("docs")}
           className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl border font-semibold text-sm transition-all ${
             activeTab === "docs"
-              ? "border-indigo-500/30 bg-indigo-500/10 text-indigo-400"
-              : "border-zinc-900 bg-zinc-900/30 hover:border-zinc-800 text-zinc-400 hover:text-white"
+              ? "border-indigo-150 bg-indigo-50/70 text-indigo-700"
+              : "border-slate-200 bg-white hover:border-slate-300 text-slate-600 hover:text-slate-900"
           }`}
         >
           <span className="flex items-center gap-2">
             <Database className="w-4 h-4" /> Knowledge Base
           </span>
-          <span className="text-[10px] bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded-md font-mono">
+          <span className="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-md font-mono font-semibold">
             PDFs
           </span>
         </button>
@@ -159,14 +159,14 @@ export default function Sidebar({
           onClick={() => onChangeTab("sppu")}
           className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl border font-semibold text-sm transition-all ${
             activeTab === "sppu"
-              ? "border-indigo-500/30 bg-indigo-500/10 text-indigo-400"
-              : "border-zinc-900 bg-zinc-900/30 hover:border-zinc-800 text-zinc-400 hover:text-white"
+              ? "border-indigo-150 bg-indigo-50/70 text-indigo-700"
+              : "border-slate-200 bg-white hover:border-slate-300 text-slate-600 hover:text-slate-900"
           }`}
         >
           <span className="flex items-center gap-2">
             <Globe className="w-4 h-4" /> SPPU Hub
           </span>
-          <span className="text-[10px] bg-indigo-950/40 text-indigo-400 border border-indigo-500/20 px-1.5 py-0.5 rounded-md font-mono animate-pulse">
+          <span className="text-[10px] bg-indigo-105 text-indigo-700 border border-indigo-200 px-1.5 py-0.5 rounded-md font-mono font-bold animate-pulse">
             Circulars
           </span>
         </button>
@@ -174,17 +174,17 @@ export default function Sidebar({
 
       {/* Chat History List */}
       <div className="flex-1 overflow-y-auto px-3 py-2 flex flex-col gap-1 min-h-0">
-        <h2 className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider px-2 mb-2">
+        <h2 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 mb-2">
           Chat History
         </h2>
 
         {loading && sessions.length === 0 ? (
           <div className="flex justify-center items-center py-6">
-            <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
+            <Loader2 className="w-5 h-5 text-indigo-600 animate-spin" />
           </div>
         ) : sessions.length === 0 ? (
-          <div className="text-center py-8 text-xs text-zinc-650 flex flex-col items-center gap-1.5">
-            <MessageCircle className="w-6 h-6 text-zinc-700" />
+          <div className="text-center py-8 text-xs text-slate-400 flex flex-col items-center gap-1.5">
+            <MessageCircle className="w-6 h-6 text-slate-300" />
             <span>No previous study chats.</span>
           </div>
         ) : (
@@ -199,12 +199,12 @@ export default function Sidebar({
                 }}
                 className={`group flex items-center justify-between p-2.5 rounded-xl cursor-pointer transition-all duration-200 ${
                   isActive
-                    ? "bg-zinc-900 text-white border border-zinc-850 font-medium"
-                    : "hover:bg-zinc-900/40 text-zinc-400 hover:text-zinc-200 border border-transparent"
+                    ? "bg-slate-100 text-slate-900 border border-slate-200/60 font-semibold"
+                    : "hover:bg-slate-50 text-slate-600 hover:text-slate-900 border border-transparent"
                 }`}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <MessageSquare className={`w-4.5 h-4.5 shrink-0 ${isActive ? "text-indigo-400" : "text-zinc-600 group-hover:text-zinc-500"}`} />
+                  <MessageSquare className={`w-4.5 h-4.5 shrink-0 ${isActive ? "text-indigo-650" : "text-slate-400 group-hover:text-slate-550"}`} />
                   <span className="text-sm truncate pr-1" title={session.title}>
                     {session.title}
                   </span>
@@ -213,7 +213,7 @@ export default function Sidebar({
                 <button
                   onClick={(e) => handleDeleteSession(e, session.id)}
                   disabled={deletingId === session.id}
-                  className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-zinc-600 hover:text-rose-400 hover:bg-zinc-850 transition"
+                  className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-slate-200 transition"
                   title="Delete chat session"
                 >
                   {deletingId === session.id ? (
@@ -230,19 +230,19 @@ export default function Sidebar({
 
       {/* Authenticated Profile Card Footer */}
       {user && (
-        <div className="p-3.5 border-t border-zinc-900 bg-zinc-950 flex items-center justify-between gap-3">
+        <div className="p-3.5 border-t border-slate-200 bg-slate-50/50 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600/20 to-violet-650/20 border border-white/[0.08] flex items-center justify-center font-bold text-xs text-blue-400 shrink-0 shadow-inner">
+            <div className="w-9 h-9 rounded-xl bg-slate-200 border border-slate-300 flex items-center justify-center font-bold text-xs text-slate-700 shrink-0">
               {getInitials(user.email)}
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-semibold text-white truncate leading-snug" title={user.email}>
+              <p className="text-xs font-bold text-slate-800 truncate leading-snug" title={user.email}>
                 {user.email}
               </p>
               <span className={`inline-flex items-center text-[9px] font-bold px-1.5 py-0.5 rounded-md mt-0.5 select-none ${
                 user.role === "MODERATOR" 
-                  ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                  : "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"
+                  ? "bg-amber-500/10 text-amber-600 border border-amber-500/20"
+                  : "bg-indigo-500/10 text-indigo-600 border border-indigo-500/20"
               }`}>
                 {user.role}
               </span>
@@ -250,7 +250,7 @@ export default function Sidebar({
           </div>
           <button
             onClick={handleLogout}
-            className="p-2 rounded-xl border border-zinc-850 hover:border-zinc-800 hover:bg-zinc-900 text-zinc-400 hover:text-rose-400 transition shrink-0"
+            className="p-2 rounded-xl border border-slate-200 hover:border-slate-350 hover:bg-slate-100 text-slate-500 hover:text-rose-600 transition shrink-0"
             title="Log Out"
           >
             <LogOut className="w-4 h-4" />
