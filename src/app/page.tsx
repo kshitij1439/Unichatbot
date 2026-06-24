@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import ChatWindow from "@/components/ChatWindow";
 import DocManager from "@/components/DocManager";
+import SppuHub from "@/components/SppuHub";
 import { Loader2 } from "lucide-react";
 
 export interface UserSession {
@@ -18,7 +19,7 @@ export default function Home() {
   const [user, setUser] = useState<UserSession | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
-  const [showDocManager, setShowDocManager] = useState(false);
+  const [activeTab, setActiveTab] = useState<"chat" | "docs" | "sppu">("chat");
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -50,15 +51,17 @@ export default function Home() {
 
   const handleSessionStarted = (id: string) => {
     setActiveSessionId(id);
+    setActiveTab("chat");
   };
 
   const handleSelectSession = (id: string | null) => {
     setActiveSessionId(id);
+    setActiveTab("chat");
     setIsSidebarOpen(false); // Close sidebar on mobile session switch
   };
 
-  const handleToggleDocManager = (show: boolean) => {
-    setShowDocManager(show);
+  const handleChangeTab = (tab: "chat" | "docs" | "sppu") => {
+    setActiveTab(tab);
     setIsSidebarOpen(false); // Close sidebar on mobile tab switch
   };
 
@@ -80,8 +83,8 @@ export default function Home() {
         user={user}
         activeSessionId={activeSessionId}
         onSelectSession={handleSelectSession}
-        showDocManager={showDocManager}
-        onToggleDocManager={handleToggleDocManager}
+        activeTab={activeTab}
+        onChangeTab={handleChangeTab}
         refreshTrigger={refreshTrigger}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
@@ -97,7 +100,7 @@ export default function Home() {
 
       {/* Main Panel */}
       <main className="flex-1 h-full flex flex-col min-w-0 bg-gradient-to-b from-zinc-900 to-zinc-950">
-        {showDocManager ? (
+        {activeTab === "docs" ? (
           <div className="flex-1 p-4 md:p-8 overflow-y-auto max-w-4xl mx-auto w-full">
             <DocManager 
               user={user}
@@ -105,6 +108,8 @@ export default function Home() {
               onToggleSidebar={() => setIsSidebarOpen(true)}
             />
           </div>
+        ) : activeTab === "sppu" ? (
+          <SppuHub onToggleSidebar={() => setIsSidebarOpen(true)} />
         ) : (
           <ChatWindow
             sessionId={activeSessionId}

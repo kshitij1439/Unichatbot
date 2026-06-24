@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { MessageSquare, Plus, Trash2, Database, MessageCircle, Loader2, X, LogOut, User } from "lucide-react";
+import { MessageSquare, Plus, Trash2, Database, MessageCircle, Loader2, X, LogOut, Globe } from "lucide-react";
 
 interface ChatSession {
   id: string;
@@ -18,8 +18,8 @@ interface SidebarProps {
   };
   activeSessionId: string | null;
   onSelectSession: (id: string | null) => void;
-  showDocManager: boolean;
-  onToggleDocManager: (show: boolean) => void;
+  activeTab: "chat" | "docs" | "sppu";
+  onChangeTab: (tab: "chat" | "docs" | "sppu") => void;
   refreshTrigger?: number;
   isOpen?: boolean;
   onClose?: () => void;
@@ -29,8 +29,8 @@ export default function Sidebar({
   user,
   activeSessionId,
   onSelectSession,
-  showDocManager,
-  onToggleDocManager,
+  activeTab,
+  onChangeTab,
   refreshTrigger = 0,
   isOpen = false,
   onClose,
@@ -70,7 +70,8 @@ export default function Sidebar({
       if (res.ok) {
         setSessions((prev) => prev.filter((s) => s.id !== id));
         if (activeSessionId === id) {
-          onSelectSession(null); // Deselect if deleting current
+          onSelectSession(null);
+          onChangeTab("chat");
         }
       }
     } catch (err) {
@@ -126,18 +127,22 @@ export default function Sidebar({
       <div className="p-3 flex flex-col gap-2">
         <button
           onClick={() => {
-            onToggleDocManager(false);
+            onChangeTab("chat");
             onSelectSession(null);
           }}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-650 hover:bg-indigo-600 text-white font-semibold text-sm shadow-lg shadow-indigo-950/30 transition-all active:scale-[0.98]"
+          className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm shadow-lg transition-all active:scale-[0.98] ${
+            activeTab === "chat" && !activeSessionId
+              ? "bg-indigo-650 hover:bg-indigo-600 text-white shadow-indigo-950/30"
+              : "border border-zinc-900 bg-zinc-900/30 hover:border-zinc-800 text-zinc-400 hover:text-white"
+          }`}
         >
           <Plus className="w-4 h-4" /> New Study Chat
         </button>
 
         <button
-          onClick={() => onToggleDocManager(!showDocManager)}
+          onClick={() => onChangeTab("docs")}
           className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl border font-semibold text-sm transition-all ${
-            showDocManager
+            activeTab === "docs"
               ? "border-indigo-500/30 bg-indigo-500/10 text-indigo-400"
               : "border-zinc-900 bg-zinc-900/30 hover:border-zinc-800 text-zinc-400 hover:text-white"
           }`}
@@ -147,6 +152,22 @@ export default function Sidebar({
           </span>
           <span className="text-[10px] bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded-md font-mono">
             PDFs
+          </span>
+        </button>
+
+        <button
+          onClick={() => onChangeTab("sppu")}
+          className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl border font-semibold text-sm transition-all ${
+            activeTab === "sppu"
+              ? "border-indigo-500/30 bg-indigo-500/10 text-indigo-400"
+              : "border-zinc-900 bg-zinc-900/30 hover:border-zinc-800 text-zinc-400 hover:text-white"
+          }`}
+        >
+          <span className="flex items-center gap-2">
+            <Globe className="w-4 h-4" /> SPPU Hub
+          </span>
+          <span className="text-[10px] bg-indigo-950/40 text-indigo-400 border border-indigo-500/20 px-1.5 py-0.5 rounded-md font-mono animate-pulse">
+            Circulars
           </span>
         </button>
       </div>
@@ -168,12 +189,12 @@ export default function Sidebar({
           </div>
         ) : (
           sessions.map((session) => {
-            const isActive = !showDocManager && activeSessionId === session.id;
+            const isActive = activeTab === "chat" && activeSessionId === session.id;
             return (
               <div
                 key={session.id}
                 onClick={() => {
-                  onToggleDocManager(false);
+                  onChangeTab("chat");
                   onSelectSession(session.id);
                 }}
                 className={`group flex items-center justify-between p-2.5 rounded-xl cursor-pointer transition-all duration-200 ${
