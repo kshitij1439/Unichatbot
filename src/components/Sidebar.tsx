@@ -104,7 +104,7 @@ export default function Sidebar({
       {/* Header / Brand */}
       <div className="p-4 border-b border-slate-200 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-[#1a253c] flex items-center justify-center font-bold text-white shadow-sm animate-pulse">
+          <div className="w-8 h-8 rounded-xl bg-white border border-slate-200/80 flex items-center justify-center font-bold text-[#1a253c] shadow-sm shrink-0">
             U
           </div>
           <div>

@@ -96,7 +96,13 @@ export default function DocManager({ user, onDocumentIngested, onToggleSidebar }
 
   // Navigate into a subfolder
   const navigateToFolder = (folderId: string, folderName: string) => {
-    setBreadcrumbs((prev) => [...prev, { id: folderId, name: folderName }]);
+    setBreadcrumbs((prev) => {
+      const lastCrumb = prev[prev.length - 1];
+      if (lastCrumb && lastCrumb.id === folderId) {
+        return prev;
+      }
+      return [...prev, { id: folderId, name: folderName }];
+    });
   };
 
   // Navigate to a specific breadcrumb level
@@ -450,7 +456,7 @@ export default function DocManager({ user, onDocumentIngested, onToggleSidebar }
                   >
                     <button
                       onClick={() => navigateToFolder(folder.id!, folder.name)}
-                      disabled={ingestingFolderId !== null || ingestingId !== null}
+                      disabled={ingestingFolderId !== null || ingestingId !== null || loading}
                       className="flex items-center gap-3 min-w-0 flex-1 text-left"
                     >
                       <div className="w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center shrink-0 border border-indigo-100 text-indigo-600 group-hover:bg-indigo-100 transition-colors">

@@ -88,11 +88,12 @@ export const MascotViewport = forwardRef<MascotViewportRef, MascotViewportProps>
       const renderer = new THREE.WebGLRenderer({
         canvas: canvasRef.current,
         antialias: true,
-        preserveDrawingBuffer: true,
-        alpha: true
+        alpha: true,
+        powerPreference: "high-performance",
+        precision: "highp"
       });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 3));
       renderer.setSize(width, height);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Beautiful soft shadows
       
