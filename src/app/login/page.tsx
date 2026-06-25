@@ -68,8 +68,8 @@ export default function LoginPage() {
       <div className="w-full max-w-md relative z-10">
         {/* Logo / Brand Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-violet-600 shadow-lg shadow-blue-500/20 mb-4 animate-pulse">
-            <GraduationCap className="w-7 h-7 text-white" />
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white border border-slate-200/80 shadow-md shadow-slate-100/50 mb-4 shrink-0">
+            <GraduationCap className="w-7 h-7 text-blue-600" />
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight text-[#1a253c]">
             Welcome Back

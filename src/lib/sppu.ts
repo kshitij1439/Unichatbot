@@ -14,7 +14,7 @@ export const CURATED_CIRCULARS: Circular[] = [
     title: "Circular No. 102/2026: BE & TE Computer Engineering Exam Form Schedule",
     category: "exam",
     date: "2026-06-20",
-    url: "https://exam.unipune.ac.in/circulars/102-exam.pdf",
+    url: "https://exam.unipune.ac.in/Pages/ExamFormsOnline.html",
     summary: "Backlog & regular examination form submission schedules are active. Registration opens June 22. Submission deadline without late fee is July 5, 2026. Late fee submissions accepted until July 10, 2026."
   },
   {
@@ -22,7 +22,7 @@ export const CURATED_CIRCULARS: Circular[] = [
     title: "Admission Notification 44/2026: Extension of PG Course Application Deadline",
     category: "admission",
     date: "2026-06-18",
-    url: "https://campus.unipune.ac.in/admission-44-extended.pdf",
+    url: "https://campus.unipune.ac.in/",
     summary: "Online application deadline for PG, Integrated PG, and Diploma programs has been extended to June 30, 2026. Applications must be completed online via the OEE portal."
   },
   {
@@ -30,7 +30,7 @@ export const CURATED_CIRCULARS: Circular[] = [
     title: "Academic Circular 95/2026: Syllabus Revision for TE Engineering (2024 Course Pattern)",
     category: "general",
     date: "2026-06-15",
-    url: "https://www.unipune.ac.in/syllabus-updates.htm",
+    url: "https://exam.unipune.ac.in/Pages/Syllabus.html",
     summary: "Updated curriculum guidelines for Third Year (TE) Computer Engineering, IT, and Mechanical branches under the 2024 course pattern have been published. Revision takes effect starting current semester."
   },
   {
@@ -38,7 +38,7 @@ export const CURATED_CIRCULARS: Circular[] = [
     title: "Notification 108/2026: SPPU State Scholarship Application Open",
     category: "scholarship",
     date: "2026-06-23",
-    url: "https://bcud.unipune.ac.in/scholarships/minority-notice.pdf",
+    url: "https://www.unipune.ac.in/",
     summary: "The state government scholarship portal is open for SE, TE, and BE students of minority communities. Eligible students must upload documents and submit applications before July 15, 2026."
   }
 ];
@@ -73,7 +73,7 @@ export async function fetchCircularsFromSppu(): Promise<Circular[]> {
 
     while ((match = regex.exec(html)) !== null && count < 6) {
       let url = match[1];
-      let title = match[2].replace(/<[^>]*>/g, "").trim();
+      const title = match[2].replace(/<[^>]*>/g, "").trim();
 
       if (title.length > 15 && !title.toLowerCase().includes("contact") && !title.toLowerCase().includes("home")) {
         if (url.startsWith("/")) {
