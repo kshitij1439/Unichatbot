@@ -67,6 +67,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No documents found" }, { status: 404 });
     }
 
+    // 2. Validate that all selected documents belong to the same subject folder (one subject at a time)
+    const uniquePaths = Array.from(new Set(documents.map((d) => d.path).filter(Boolean)));
+    if (uniquePaths.length > 1) {
+      return NextResponse.json(
+        { error: "Validation Error: All selected papers must belong to the same subject folder (one subject at a time)." },
+        { status: 400 }
+      );
+    }
+
     // 2. Check cached analysis matching the exact set of selected documents
     const sortedTargetIds = [...targetIds].sort();
     for (const doc of documents) {

@@ -73,6 +73,15 @@ export default function PatternAnalyzer({ onToggleSidebar }: PatternAnalyzerProp
   const [error, setError] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
 
+  // Subject consistency check: Selected files must belong to the same parent folder / path
+  const selectedPaths = selectedDocIds
+    .map((id) => documents.find((d) => d.id === id))
+    .filter((d): d is DocumentItem => !!d)
+    .map((d) => d.path)
+    .filter(Boolean);
+  const uniqueSelectedPaths = Array.from(new Set(selectedPaths));
+  const hasSubjectMismatch = uniqueSelectedPaths.length > 1;
+
   // Fetch completed documents on mount
   useEffect(() => {
     fetchDocuments();
@@ -278,13 +287,22 @@ export default function PatternAnalyzer({ onToggleSidebar }: PatternAnalyzerProp
           )}
         </div>
 
+        {hasSubjectMismatch && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex gap-2 items-center text-xs text-amber-850 font-semibold mt-2">
+            <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
+            <span>
+              Subject Mismatch: Selected papers must belong to the same subject folder (one subject at a time).
+            </span>
+          </div>
+        )}
+
         <div className="flex items-center justify-between border-t border-slate-100 pt-4 mt-2">
           <p className="text-xs text-slate-500 font-semibold">
             {selectedDocIds.length} {selectedDocIds.length === 1 ? "paper" : "papers"} selected for analysis.
           </p>
           <button
             onClick={runAnalysis}
-            disabled={loading || selectedDocIds.length === 0}
+            disabled={loading || selectedDocIds.length === 0 || hasSubjectMismatch}
             className="bg-[#1a253c] hover:bg-[#253554] disabled:bg-slate-200 disabled:text-slate-450 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-bold text-sm shadow-sm transition flex items-center justify-center gap-2 cursor-pointer"
           >
           {loading ? (
