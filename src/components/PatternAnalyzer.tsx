@@ -67,7 +67,7 @@ interface PatternAnalyzerProps {
 
 export default function PatternAnalyzer({ onToggleSidebar }: PatternAnalyzerProps) {
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
-  const [selectedDocId, setSelectedDocId] = useState<string>("");
+  const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetchingDocs, setFetchingDocs] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -87,7 +87,8 @@ export default function PatternAnalyzer({ onToggleSidebar }: PatternAnalyzerProp
       if (res.ok) {
         setDocuments(data.documents || []);
         if (data.documents && data.documents.length > 0) {
-          setSelectedDocId(data.documents[0].id);
+          const firstId = data.documents[0].id;
+          setSelectedDocIds([firstId]);
           // If the first document already has analysis, load it
           if (data.documents[0].analysis) {
             try {
@@ -108,24 +109,43 @@ export default function PatternAnalyzer({ onToggleSidebar }: PatternAnalyzerProp
     }
   };
 
-  const handleDocumentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const docId = e.target.value;
-    setSelectedDocId(docId);
-    setAnalysis(null);
-    setError(null);
+  const checkCombinationCache = (ids: string[]) => {
+    if (ids.length === 0) {
+      setAnalysis(null);
+      return;
+    }
 
-    const doc = documents.find((d) => d.id === docId);
-    if (doc && doc.analysis) {
-      try {
-        setAnalysis(JSON.parse(doc.analysis));
-      } catch (err) {
-        console.warn("Failed to parse cached analysis on switch", err);
+    const sortedSelected = [...ids].sort();
+    let matchedAnalysis = null;
+
+    for (const doc of documents) {
+      if (doc.analysis) {
+        try {
+          const parsed = JSON.parse(doc.analysis);
+          const parsedIds = parsed.documentIds || [doc.id];
+          const sortedParsed = [...parsedIds].sort();
+          if (JSON.stringify(sortedSelected) === JSON.stringify(sortedParsed)) {
+            matchedAnalysis = parsed;
+            break;
+          }
+        } catch (e) {
+          console.warn("Error checking combination cache", e);
+        }
       }
     }
+    setAnalysis(matchedAnalysis);
+  };
+
+  const toggleDocumentSelection = (id: string) => {
+    setSelectedDocIds((prev) => {
+      const next = prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id];
+      checkCombinationCache(next);
+      return next;
+    });
   };
 
   const runAnalysis = async () => {
-    if (!selectedDocId) return;
+    if (selectedDocIds.length === 0) return;
     setLoading(true);
     setError(null);
     setAnalysis(null);
@@ -134,18 +154,19 @@ export default function PatternAnalyzer({ onToggleSidebar }: PatternAnalyzerProp
       const res = await fetch("/api/analyze-papers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ documentId: selectedDocId }),
+        body: JSON.stringify({ documentIds: selectedDocIds }),
       });
       const data = await res.json();
       if (res.ok) {
         setAnalysis(data.analysis);
-        // Update local document record cached state
+        // Cache the analysis result locally in the documents list to avoid subsequent API calls
         setDocuments((prev) =>
-          prev.map((d) =>
-            d.id === selectedDocId
-              ? { ...d, analysis: JSON.stringify(data.analysis) }
-              : d
-          )
+          prev.map((d) => {
+            if (d.id === selectedDocIds[0]) {
+              return { ...d, analysis: JSON.stringify(data.analysis) };
+            }
+            return d;
+          })
         );
       } else {
         setError(data.error || "Failed to perform pattern analysis.");
@@ -208,10 +229,10 @@ export default function PatternAnalyzer({ onToggleSidebar }: PatternAnalyzerProp
       </div>
 
       {/* Control Panel / File Selector */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-            Select Course PDF / Question Paper
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col gap-4">
+        <div className="w-full min-w-0">
+          <label className="block text-xs font-bold text-slate-450 uppercase tracking-wider mb-3">
+            Select Past Papers / Study Material to Analyze (Select Multiple to Correlate Patterns)
           </label>
           {fetchingDocs ? (
             <div className="flex items-center gap-2 text-sm text-slate-450 font-semibold py-2">
@@ -224,27 +245,48 @@ export default function PatternAnalyzer({ onToggleSidebar }: PatternAnalyzerProp
               <span>No ingested files available. Go to the Knowledge Base to ingest PDFs first.</span>
             </div>
           ) : (
-            <div className="flex flex-col gap-1">
-              <select
-                value={selectedDocId}
-                onChange={handleDocumentChange}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-semibold text-slate-700 focus:bg-white focus:outline-none focus:border-indigo-600 transition"
-              >
-                {documents.map((doc) => (
-                  <option key={doc.id} value={doc.id}>
-                    {doc.name} ({formatPath(doc.path)})
-                  </option>
-                ))}
-              </select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-48 overflow-y-auto p-1">
+              {documents.map((doc) => {
+                const isChecked = selectedDocIds.includes(doc.id);
+                return (
+                  <label
+                    key={doc.id}
+                    className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer select-none transition-all duration-200 ${
+                      isChecked
+                        ? "border-indigo-500 bg-indigo-50/45 shadow-sm shadow-indigo-100/30"
+                        : "border-slate-200 bg-slate-50/10 hover:bg-slate-50/50"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => toggleDocumentSelection(doc.id)}
+                      className="w-4 h-4 rounded text-indigo-600 border-slate-350 focus:ring-indigo-500 cursor-pointer"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-bold text-slate-800 truncate" title={doc.name}>
+                        {doc.name}
+                      </p>
+                      <p className="text-[9px] text-slate-400 font-bold truncate mt-0.5">
+                        {formatPath(doc.path)}
+                      </p>
+                    </div>
+                  </label>
+                );
+              })}
             </div>
           )}
         </div>
 
-        <button
-          onClick={runAnalysis}
-          disabled={loading || !selectedDocId}
-          className="bg-[#1a253c] hover:bg-[#253554] disabled:bg-slate-200 disabled:text-slate-450 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-bold text-sm shadow-sm transition flex items-center justify-center gap-2 shrink-0 cursor-pointer self-stretch md:self-end"
-        >
+        <div className="flex items-center justify-between border-t border-slate-100 pt-4 mt-2">
+          <p className="text-xs text-slate-500 font-semibold">
+            {selectedDocIds.length} {selectedDocIds.length === 1 ? "paper" : "papers"} selected for analysis.
+          </p>
+          <button
+            onClick={runAnalysis}
+            disabled={loading || selectedDocIds.length === 0}
+            className="bg-[#1a253c] hover:bg-[#253554] disabled:bg-slate-200 disabled:text-slate-450 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-bold text-sm shadow-sm transition flex items-center justify-center gap-2 cursor-pointer"
+          >
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -258,6 +300,7 @@ export default function PatternAnalyzer({ onToggleSidebar }: PatternAnalyzerProp
           )}
         </button>
       </div>
+    </div>
 
       {error && (
         <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex gap-3 items-start text-xs text-rose-650 font-semibold shadow-sm">
