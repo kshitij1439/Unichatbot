@@ -6,6 +6,7 @@ import Sidebar from "@/components/Sidebar";
 import ChatWindow from "@/components/ChatWindow";
 import DocManager from "@/components/DocManager";
 import SppuHub from "@/components/SppuHub";
+import PatternAnalyzer from "@/components/PatternAnalyzer";
 import { Loader2 } from "lucide-react";
 
 export interface UserSession {
@@ -19,7 +20,7 @@ export default function Home() {
   const [user, setUser] = useState<UserSession | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"chat" | "docs" | "sppu">("chat");
+  const [activeTab, setActiveTab] = useState<"chat" | "docs" | "sppu" | "analyzer">("chat");
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -60,7 +61,7 @@ export default function Home() {
     setIsSidebarOpen(false); // Close sidebar on mobile session switch
   };
 
-  const handleChangeTab = (tab: "chat" | "docs" | "sppu") => {
+  const handleChangeTab = (tab: "chat" | "docs" | "sppu" | "analyzer") => {
     setActiveTab(tab);
     setIsSidebarOpen(false); // Close sidebar on mobile tab switch
   };
@@ -110,6 +111,8 @@ export default function Home() {
           </div>
         ) : activeTab === "sppu" ? (
           <SppuHub onToggleSidebar={() => setIsSidebarOpen(true)} />
+        ) : activeTab === "analyzer" ? (
+          <PatternAnalyzer onToggleSidebar={() => setIsSidebarOpen(true)} />
         ) : (
           <ChatWindow
             sessionId={activeSessionId}

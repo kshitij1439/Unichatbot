@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { MessageSquare, Plus, Trash2, Database, MessageCircle, Loader2, X, LogOut, Globe } from "lucide-react";
+import { MessageSquare, Plus, Trash2, Database, MessageCircle, Loader2, X, LogOut, Globe, TrendingUp } from "lucide-react";
 
 interface ChatSession {
   id: string;
@@ -18,8 +18,8 @@ interface SidebarProps {
   };
   activeSessionId: string | null;
   onSelectSession: (id: string | null) => void;
-  activeTab: "chat" | "docs" | "sppu";
-  onChangeTab: (tab: "chat" | "docs" | "sppu") => void;
+  activeTab: "chat" | "docs" | "sppu" | "analyzer";
+  onChangeTab: (tab: "chat" | "docs" | "sppu" | "analyzer") => void;
   refreshTrigger?: number;
   isOpen?: boolean;
   onClose?: () => void;
@@ -168,6 +168,22 @@ export default function Sidebar({
           </span>
           <span className="text-[10px] bg-indigo-105 text-indigo-700 border border-indigo-200 px-1.5 py-0.5 rounded-md font-mono font-bold animate-pulse">
             Circulars
+          </span>
+        </button>
+
+        <button
+          onClick={() => onChangeTab("analyzer")}
+          className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl border font-semibold text-sm transition-all ${
+            activeTab === "analyzer"
+              ? "border-indigo-150 bg-indigo-50/70 text-indigo-700"
+              : "border-slate-200 bg-white hover:border-slate-300 text-slate-600 hover:text-slate-900"
+          }`}
+        >
+          <span className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4" /> Pattern Analyzer
+          </span>
+          <span className="text-[10px] bg-emerald-50 text-emerald-705 border border-emerald-200 px-1.5 py-0.5 rounded-md font-mono font-bold">
+            New
           </span>
         </button>
       </div>
