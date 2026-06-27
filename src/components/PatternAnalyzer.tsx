@@ -73,14 +73,9 @@ export default function PatternAnalyzer({ onToggleSidebar }: PatternAnalyzerProp
   const [error, setError] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
 
-  // Subject consistency check: Selected files must belong to the same parent folder / path
-  const selectedPaths = selectedDocIds
-    .map((id) => documents.find((d) => d.id === id))
-    .filter((d): d is DocumentItem => !!d)
-    .map((d) => d.path)
-    .filter(Boolean);
-  const uniqueSelectedPaths = Array.from(new Set(selectedPaths));
-  const hasSubjectMismatch = uniqueSelectedPaths.length > 1;
+  // Find the folder path of the first selected document to restrict checking other subjects
+  const firstSelectedDoc = selectedDocIds.length > 0 ? documents.find((d) => d.id === selectedDocIds[0]) : null;
+  const activePath = firstSelectedDoc?.path || null;
 
   // Fetch completed documents on mount
   useEffect(() => {
@@ -257,26 +252,31 @@ export default function PatternAnalyzer({ onToggleSidebar }: PatternAnalyzerProp
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-48 overflow-y-auto p-1">
               {documents.map((doc) => {
                 const isChecked = selectedDocIds.includes(doc.id);
+                const isDisabled = activePath !== null && doc.path !== activePath && !isChecked;
+
                 return (
                   <label
                     key={doc.id}
-                    className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer select-none transition-all duration-200 ${
+                    className={`flex items-center gap-3 p-3 rounded-xl border select-none transition-all duration-200 ${
                       isChecked
-                        ? "border-indigo-500 bg-indigo-50/45 shadow-sm shadow-indigo-100/30"
-                        : "border-slate-200 bg-slate-50/10 hover:bg-slate-50/50"
+                        ? "border-indigo-500 bg-indigo-50/45 shadow-sm shadow-indigo-100/30 cursor-pointer"
+                        : isDisabled
+                        ? "border-slate-150 bg-slate-50/40 opacity-40 cursor-not-allowed"
+                        : "border-slate-200 bg-slate-50/10 hover:bg-slate-50/50 cursor-pointer"
                     }`}
                   >
                     <input
                       type="checkbox"
                       checked={isChecked}
+                      disabled={isDisabled}
                       onChange={() => toggleDocumentSelection(doc.id)}
-                      className="w-4 h-4 rounded text-indigo-600 border-slate-350 focus:ring-indigo-500 cursor-pointer"
+                      className="w-4 h-4 rounded text-indigo-600 border-slate-350 focus:ring-indigo-500 cursor-pointer disabled:cursor-not-allowed"
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-slate-800 truncate" title={doc.name}>
+                      <p className={`text-xs font-bold truncate ${isDisabled ? "text-slate-400" : "text-slate-800"}`} title={doc.name}>
                         {doc.name}
                       </p>
-                      <p className="text-[9px] text-slate-400 font-bold truncate mt-0.5">
+                      <p className={`text-[9px] font-bold truncate mt-0.5 ${isDisabled ? "text-slate-350" : "text-slate-400"}`}>
                         {formatPath(doc.path)}
                       </p>
                     </div>
@@ -287,22 +287,18 @@ export default function PatternAnalyzer({ onToggleSidebar }: PatternAnalyzerProp
           )}
         </div>
 
-        {hasSubjectMismatch && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex gap-2 items-center text-xs text-amber-850 font-semibold mt-2">
-            <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
-            <span>
-              Subject Mismatch: Selected papers must belong to the same subject folder (one subject at a time).
-            </span>
-          </div>
-        )}
-
         <div className="flex items-center justify-between border-t border-slate-100 pt-4 mt-2">
-          <p className="text-xs text-slate-500 font-semibold">
-            {selectedDocIds.length} {selectedDocIds.length === 1 ? "paper" : "papers"} selected for analysis.
+          <p className="text-xs text-slate-500 font-semibold flex flex-col gap-0.5">
+            <span>{selectedDocIds.length} {selectedDocIds.length === 1 ? "paper" : "papers"} selected for analysis.</span>
+            {activePath && (
+              <span className="text-[10px] text-indigo-600 font-extrabold">
+                Analyzing subject: {activePath.split("/").pop()}
+              </span>
+            )}
           </p>
           <button
             onClick={runAnalysis}
-            disabled={loading || selectedDocIds.length === 0 || hasSubjectMismatch}
+            disabled={loading || selectedDocIds.length === 0}
             className="bg-[#1a253c] hover:bg-[#253554] disabled:bg-slate-200 disabled:text-slate-450 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-bold text-sm shadow-sm transition flex items-center justify-center gap-2 cursor-pointer"
           >
           {loading ? (
