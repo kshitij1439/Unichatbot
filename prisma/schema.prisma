@@ -28,6 +28,7 @@ model Document {
   mimeType  String?
   status    String   @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
   path      String?  // Google Drive folder path (breadcrumbs)
+  analysis  String?  // Store cached JSON string of the paper analysis
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   chunks    Chunk[]
