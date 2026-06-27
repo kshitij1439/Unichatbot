@@ -65,6 +65,168 @@ interface PatternAnalyzerProps {
   onToggleSidebar?: () => void;
 }
 
+interface SvgChartProps {
+  topics: Topic[];
+}
+
+export function TopicFrequencyChart({ topics }: SvgChartProps) {
+  // Sort top 7 topics by frequency
+  const topTopics = [...topics]
+    .sort((a, b) => b.frequency - a.frequency)
+    .slice(0, 7);
+
+  const maxFreq = Math.max(...topTopics.map((t) => t.frequency), 1);
+  const chartHeight = 130;
+  const barWidth = 36;
+  const gap = 20;
+  const paddingLeft = 30;
+  const paddingBottom = 35;
+  const chartWidth = topTopics.length * (barWidth + gap) + paddingLeft + 10;
+
+  return (
+    <div className="w-full bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+      <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-450">Topic Frequency Distribution</h4>
+        <span className="text-[10px] bg-indigo-55 text-indigo-750 px-2 py-0.5 rounded-md font-extrabold">Past Occurrences</span>
+      </div>
+      <div className="w-full overflow-x-auto">
+        <div className="min-w-[400px] h-[170px] flex items-center justify-center">
+          <svg viewBox={`0 0 ${chartWidth} ${chartHeight + paddingBottom}`} className="w-full h-full overflow-visible">
+            {/* Y Axis Grid Lines */}
+            {[0, 0.25, 0.5, 0.75, 1].map((ratio, i) => {
+              const y = chartHeight - ratio * chartHeight;
+              const val = Math.round(ratio * maxFreq);
+              return (
+                <g key={i} className="opacity-40">
+                  <line
+                    x1={paddingLeft}
+                    y1={y}
+                    x2={chartWidth - 10}
+                    y2={y}
+                    stroke="#e2e8f0"
+                    strokeWidth="1"
+                    strokeDasharray="4 4"
+                  />
+                  <text x={paddingLeft - 8} y={y + 3} textAnchor="end" fill="#64748b" className="text-[9px] font-bold font-mono">
+                    {val}
+                  </text>
+                </g>
+              );
+            })}
+
+            {/* Bars */}
+            {topTopics.map((topic, index) => {
+              const barHeight = (topic.frequency / maxFreq) * chartHeight;
+              const x = paddingLeft + index * (barWidth + gap) + gap / 2;
+              const y = chartHeight - barHeight;
+
+              return (
+                <g key={index} className="group cursor-pointer">
+                  {/* Tooltip hover trigger background */}
+                  <rect
+                    x={x - gap / 4}
+                    y={0}
+                    width={barWidth + gap / 2}
+                    height={chartHeight}
+                    fill="transparent"
+                    className="hover:fill-slate-50/20 transition-all duration-200"
+                  />
+                  
+                  {/* Visual Bar */}
+                  <rect
+                    x={x}
+                    y={y}
+                    width={barWidth}
+                    height={Math.max(barHeight, 4)}
+                    rx="4"
+                    ry="4"
+                    fill="url(#barGradient)"
+                    className="transition-all duration-300 hover:opacity-90"
+                  />
+
+                  {/* Value Label above Bar */}
+                  <text
+                    x={x + barWidth / 2}
+                    y={y - 5}
+                    textAnchor="middle"
+                    fill="#4f46e5"
+                    className="text-[9px] font-extrabold opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                  >
+                    {topic.frequency}x
+                  </text>
+
+                  {/* X Axis Label */}
+                  <text
+                    x={x + barWidth / 2}
+                    y={chartHeight + 14}
+                    textAnchor="middle"
+                    fill="#475569"
+                    className="text-[9px] font-bold"
+                    transform={`rotate(-15, ${x + barWidth / 2}, ${chartHeight + 14})`}
+                  >
+                    {topic.topicName.length > 8 ? `${topic.topicName.slice(0, 8)}..` : topic.topicName}
+                  </text>
+
+                  <title>{`${topic.topicName}\nUnit: ${topic.unitName}\nFrequency: ${topic.frequency} times\nImportance: ${topic.importance}`}</title>
+                </g>
+              );
+            })}
+
+            {/* Gradients Definition */}
+            <defs>
+              <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#4f46e5" />
+                <stop offset="100%" stopColor="#818cf8" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface UnitWeightageBarChartProps {
+  heatmapUnits: HeatmapUnit[];
+}
+
+export function UnitWeightageBarChart({ heatmapUnits }: UnitWeightageBarChartProps) {
+  const maxWeight = Math.max(...heatmapUnits.map((u) => u.weight), 1);
+
+  return (
+    <div className="w-full bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
+      <div>
+        <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-450">Unit Weightage (Relative Marks)</h4>
+          <span className="text-[10px] bg-indigo-50 text-indigo-750 px-2 py-0.5 rounded-md font-extrabold">Relative Percentage</span>
+        </div>
+        <div className="flex flex-col gap-3 mt-2">
+          {heatmapUnits.slice(0, 5).map((unit, idx) => {
+            const percentage = unit.weight;
+            return (
+              <div key={idx} className="flex flex-col gap-0.5">
+                <div className="flex justify-between items-center text-xs font-bold text-slate-800">
+                  <span className="truncate max-w-[190px]" title={unit.unitName}>{unit.unitName}</span>
+                  <span className="font-mono text-indigo-650">{percentage}%</span>
+                </div>
+                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden relative">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-indigo-650 transition-all duration-500"
+                    style={{ width: `${(percentage / maxWeight) * 100}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <p className="text-[9px] text-slate-450 font-bold mt-4 leading-relaxed bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+        💡 Heavy-weight units typically contain core syllabus principles and should be prepared first.
+      </p>
+    </div>
+  );
+}
+
 export default function PatternAnalyzer({ onToggleSidebar }: PatternAnalyzerProps) {
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
@@ -354,6 +516,12 @@ export default function PatternAnalyzer({ onToggleSidebar }: PatternAnalyzerProp
             <p className="text-xs text-indigo-150 mt-1 font-semibold leading-relaxed max-w-2xl">
               Calculated frequency trends and questions based on parsed past papers. Total identified key topics: {analysis.topics.length}.
             </p>
+          </div>
+
+          {/* Visual Analytics Chart Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <TopicFrequencyChart topics={analysis.topics} />
+            <UnitWeightageBarChart heatmapUnits={analysis.heatmapUnits} />
           </div>
 
           {/* Heatmap Grid */}
