@@ -7,6 +7,7 @@ import ChatWindow from "@/components/ChatWindow";
 import DocManager from "@/components/DocManager";
 import SppuHub from "@/components/SppuHub";
 import PatternAnalyzer from "@/components/PatternAnalyzer";
+import Dashboard from "@/components/Dashboard";
 import { Loader2 } from "lucide-react";
 
 export interface UserSession {
@@ -20,9 +21,25 @@ export default function Home() {
   const [user, setUser] = useState<UserSession | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"chat" | "docs" | "sppu" | "analyzer">("chat");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "chat" | "docs" | "sppu" | "analyzer">("dashboard");
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Parse URL search parameters on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab");
+      const sessionParam = params.get("session");
+
+      if (tabParam && ["dashboard", "chat", "docs", "sppu", "analyzer"].includes(tabParam)) {
+        setActiveTab(tabParam as any);
+      }
+      if (sessionParam) {
+        setActiveSessionId(sessionParam);
+      }
+    }
+  }, []);
 
   // Authenticate user on mount
   useEffect(() => {
@@ -46,6 +63,19 @@ export default function Home() {
       });
   }, [router]);
 
+  const updateUrl = (tab: string, sessionId: string | null) => {
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", tab);
+      if (sessionId && tab === "chat") {
+        url.searchParams.set("session", sessionId);
+      } else {
+        url.searchParams.delete("session");
+      }
+      window.history.pushState(null, "", url.pathname + url.search);
+    }
+  };
+
   const handleDocumentIngested = () => {
     setRefreshTrigger((prev) => prev + 1);
   };
@@ -53,17 +83,20 @@ export default function Home() {
   const handleSessionStarted = (id: string) => {
     setActiveSessionId(id);
     setActiveTab("chat");
+    updateUrl("chat", id);
   };
 
   const handleSelectSession = (id: string | null) => {
     setActiveSessionId(id);
     setActiveTab("chat");
     setIsSidebarOpen(false); // Close sidebar on mobile session switch
+    updateUrl("chat", id);
   };
 
-  const handleChangeTab = (tab: "chat" | "docs" | "sppu" | "analyzer") => {
+  const handleChangeTab = (tab: "dashboard" | "chat" | "docs" | "sppu" | "analyzer") => {
     setActiveTab(tab);
     setIsSidebarOpen(false); // Close sidebar on mobile tab switch
+    updateUrl(tab, activeSessionId);
   };
 
   if (authLoading) {
@@ -101,7 +134,13 @@ export default function Home() {
 
       {/* Main Panel */}
       <main className="flex-1 h-full flex flex-col min-w-0 bg-slate-50">
-        {activeTab === "docs" ? (
+        {activeTab === "dashboard" ? (
+          <Dashboard
+            user={user}
+            onChangeTab={handleChangeTab}
+            onToggleSidebar={() => setIsSidebarOpen(true)}
+          />
+        ) : activeTab === "docs" ? (
           <div className="flex-1 p-4 md:p-8 overflow-y-auto max-w-4xl mx-auto w-full">
             <DocManager 
               user={user}

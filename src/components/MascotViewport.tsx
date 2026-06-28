@@ -152,17 +152,17 @@ export const MascotViewport = forwardRef<MascotViewportRef, MascotViewportProps>
       scene.add(robotGroup);
       robotGroupRef.current = robotGroup;
 
-      // Define Materials (Premium Indigo Clay palette)
+      // Define Materials (Polished Premium White palette)
       const robotMaterial = new THREE.MeshStandardMaterial({
-        color: 0xeef2ff, // Indigo-50 (Futuristic soft off-white/indigo clay)
-        roughness: 0.95,
-        metalness: 0.0,
+        color: 0xffffff, // Pure white body shell
+        roughness: 0.01,
+        metalness: 0.01,
       });
 
       const faceplateMaterial = new THREE.MeshStandardMaterial({
-        color: 0xe0e7ff, // Indigo-100 (Slightly darker blue-gray inset visor)
+        color: 0xf1f5f9, // Slate-100 faceplate
         roughness: 0.95,
-        metalness: 0.0,
+        metalness: 0.02,
       });
 
       const eyeMaterial = new THREE.MeshStandardMaterial({

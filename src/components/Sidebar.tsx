@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { MessageSquare, Plus, Trash2, Database, MessageCircle, Loader2, X, LogOut, Globe, TrendingUp } from "lucide-react";
+import { MessageSquare, Plus, Trash2, Database, MessageCircle, Loader2, X, LogOut, Globe, TrendingUp, LayoutDashboard } from "lucide-react";
 
 interface ChatSession {
   id: string;
@@ -18,8 +18,8 @@ interface SidebarProps {
   };
   activeSessionId: string | null;
   onSelectSession: (id: string | null) => void;
-  activeTab: "chat" | "docs" | "sppu" | "analyzer";
-  onChangeTab: (tab: "chat" | "docs" | "sppu" | "analyzer") => void;
+  activeTab: "dashboard" | "chat" | "docs" | "sppu" | "analyzer";
+  onChangeTab: (tab: "dashboard" | "chat" | "docs" | "sppu" | "analyzer") => void;
   refreshTrigger?: number;
   isOpen?: boolean;
   onClose?: () => void;
@@ -125,6 +125,19 @@ export default function Sidebar({
 
       {/* Primary Action Buttons */}
       <div className="p-3 flex flex-col gap-2">
+        <button
+          onClick={() => onChangeTab("dashboard")}
+          className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl border font-semibold text-sm transition-all ${
+            activeTab === "dashboard"
+              ? "border-indigo-150 bg-indigo-50/70 text-indigo-750 font-bold"
+              : "border-slate-200 bg-white hover:border-slate-300 text-slate-650 hover:text-slate-900"
+          }`}
+        >
+          <span className="flex items-center gap-2">
+            <LayoutDashboard className="w-4 h-4" /> Dashboard
+          </span>
+        </button>
+
         <button
           onClick={() => {
             onChangeTab("chat");
