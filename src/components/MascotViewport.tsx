@@ -258,7 +258,7 @@ export const MascotViewport = forwardRef<MascotViewportRef, MascotViewportProps>
 
       // --- Robot Torso / Body Creation ---
       const bodyGroup = new THREE.Group();
-      bodyGroup.position.set(0, -0.38, 0);
+      bodyGroup.position.set(0, -0.38, -0.12);
       robotGroup.add(bodyGroup);
 
       // Torso shape: Curvy Teardrop (rounded top, beautifully curved/rounded bottom)
