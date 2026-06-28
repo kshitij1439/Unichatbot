@@ -101,7 +101,8 @@ export async function GET(req: NextRequest) {
 
     // 5. Also include any locally-uploaded documents (no fileId) when showing root (scoped to global + user's local)
     let localOnly: any[] = [];
-    if (folderId === rootFolderId) {
+    const showLocal = searchParams.get("showLocal") === "true" || folderId === rootFolderId;
+    if (showLocal) {
       const localDocs = await prisma.document.findMany({
         where: {
           fileId: null,
@@ -128,7 +129,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       folderId,
-      isRoot: folderId === rootFolderId,
+      isRoot: showLocal,
       items: [...items, ...localOnly],
     });
   } catch (error: any) {

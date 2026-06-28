@@ -61,6 +61,10 @@ export default function DocManager({ user, onDocumentIngested, onToggleSidebar }
   // Toggle for Global vs Personal uploads (Moderator only)
   const [isGlobalUpload, setIsGlobalUpload] = useState(true);
 
+  // Custom Google Drive Folder ID
+  const [customFolderId, setCustomFolderId] = useState<string | null>(null);
+  const [customFolderIdInput, setCustomFolderIdInput] = useState<string>("");
+
   // Folder navigation state
   const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([
     { id: null, name: "Root" },
@@ -68,14 +72,31 @@ export default function DocManager({ user, onDocumentIngested, onToggleSidebar }
 
   const currentFolderId = breadcrumbs[breadcrumbs.length - 1].id;
 
+  // Load custom folder ID from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("custom_gdrive_folder_id");
+      if (saved) {
+        setCustomFolderId(saved);
+        setCustomFolderIdInput(saved);
+      }
+    }
+  }, []);
+
   const fetchItems = useCallback(async (folderId: string | null) => {
     setLoading(true);
     setError(null);
     try {
-      const url = folderId
-        ? `/api/ingest?folderId=${encodeURIComponent(folderId)}`
-        : "/api/ingest";
-      const res = await fetch(url);
+      const targetFolderId = folderId || customFolderId;
+      let url = "/api/ingest";
+      const params = new URLSearchParams();
+      if (targetFolderId) {
+        params.set("folderId", targetFolderId);
+      }
+      if (!folderId) {
+        params.set("showLocal", "true");
+      }
+      const res = await fetch(url + (params.toString() ? `?${params.toString()}` : ""));
       const data = await res.json();
       if (res.ok) {
         setItems(data.items || []);
@@ -88,11 +109,29 @@ export default function DocManager({ user, onDocumentIngested, onToggleSidebar }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [customFolderId]);
 
   useEffect(() => {
     fetchItems(currentFolderId);
   }, [currentFolderId, fetchItems]);
+
+  const handleApplyCustomFolder = () => {
+    const trimmed = customFolderIdInput.trim();
+    if (trimmed) {
+      localStorage.setItem("custom_gdrive_folder_id", trimmed);
+      setCustomFolderId(trimmed);
+      setBreadcrumbs([{ id: null, name: "Root" }]);
+    } else {
+      handleResetCustomFolder();
+    }
+  };
+
+  const handleResetCustomFolder = () => {
+    localStorage.removeItem("custom_gdrive_folder_id");
+    setCustomFolderId(null);
+    setCustomFolderIdInput("");
+    setBreadcrumbs([{ id: null, name: "Root" }]);
+  };
 
   // Navigate into a subfolder
   const navigateToFolder = (folderId: string, folderName: string) => {
@@ -356,6 +395,38 @@ export default function DocManager({ user, onDocumentIngested, onToggleSidebar }
         </div>
       )}
 
+      {/* Custom Google Drive Folder ID Input */}
+      <div className="bg-white border border-zinc-200 rounded-md p-4 flex flex-col md:flex-row items-center gap-3">
+        <div className="flex-1 min-w-0 w-full">
+          <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1 font-mono">
+            Custom Google Drive Folder ID
+          </label>
+          <input
+            type="text"
+            placeholder="Enter custom Google Drive Folder ID (e.g. 1A2b3C4d...)"
+            value={customFolderIdInput}
+            onChange={(e) => setCustomFolderIdInput(e.target.value)}
+            className="w-full bg-zinc-50 border border-zinc-200 text-zinc-900 rounded px-3 py-1.5 text-xs focus:outline-none focus:border-zinc-900 font-mono"
+          />
+        </div>
+        <div className="flex gap-2 w-full md:w-auto shrink-0 md:self-end">
+          <button
+            onClick={handleApplyCustomFolder}
+            className="flex-1 md:flex-initial px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-xs rounded transition border border-zinc-900 font-mono cursor-pointer"
+          >
+            Load Folder
+          </button>
+          {customFolderId && (
+            <button
+              onClick={handleResetCustomFolder}
+              className="px-3 py-2 bg-white hover:bg-zinc-50 border border-zinc-200 text-zinc-650 hover:text-zinc-900 font-bold text-xs rounded transition font-mono cursor-pointer"
+            >
+              Reset
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Local Drag and Drop Uploader */}
       <div
         onDragEnter={handleDrag}
@@ -417,8 +488,8 @@ export default function DocManager({ user, onDocumentIngested, onToggleSidebar }
               title={crumb.name}
             >
               {idx === 0 ? (
-                <span className="flex items-center gap-1">
-                  <Home className="w-3 h-3" /> Drive
+                <span className="flex items-center gap-1 font-mono">
+                  <Home className="w-3 h-3" /> {customFolderId ? "Drive (Custom)" : "Drive"}
                 </span>
               ) : (
                 crumb.name
