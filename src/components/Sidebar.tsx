@@ -98,24 +98,24 @@ export default function Sidebar({
   };
 
   return (
-    <aside className={`fixed inset-y-0 left-0 z-40 w-80 shrink-0 border-r border-slate-200 bg-white flex flex-col h-full text-slate-750 select-none transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${
+    <aside className={`fixed inset-y-0 left-0 z-40 w-80 shrink-0 border-r border-zinc-250 bg-white flex flex-col h-full text-zinc-800 select-none transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${
       isOpen ? "translate-x-0" : "-translate-x-full"
     }`}>
       {/* Header / Brand */}
-      <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+      <div className="p-4 border-b border-zinc-200 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-white border border-slate-200/80 flex items-center justify-center font-bold text-[#1a253c] shadow-sm shrink-0">
+          <div className="w-8 h-8 rounded-md bg-zinc-900 flex items-center justify-center font-bold text-white shrink-0">
             U
           </div>
           <div>
-            <h1 className="text-sm font-bold text-slate-900 tracking-tight leading-none">UniBot</h1>
-            <span className="text-[10px] text-slate-500 font-semibold">SPPU Study Assistant</span>
+            <h1 className="text-sm font-bold text-zinc-900 tracking-tight leading-none">UniBot</h1>
+            <span className="text-[10px] text-zinc-500 font-medium">SPPU Study Assistant</span>
           </div>
         </div>
         {onClose && (
           <button
             onClick={onClose}
-            className="md:hidden p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-500 hover:text-slate-900 transition"
+            className="md:hidden p-1.5 rounded-md border border-zinc-200 hover:bg-zinc-50 text-zinc-500 hover:text-zinc-900 transition"
             title="Close menu"
           >
             <X className="w-4 h-4" />
@@ -127,14 +127,14 @@ export default function Sidebar({
       <div className="p-3 flex flex-col gap-2">
         <button
           onClick={() => onChangeTab("dashboard")}
-          className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl border font-semibold text-sm transition-all ${
+          className={`w-full flex items-center justify-between px-3 py-2 rounded-md border text-xs font-medium transition-all ${
             activeTab === "dashboard"
-              ? "border-indigo-150 bg-indigo-50/70 text-indigo-750 font-bold"
-              : "border-slate-200 bg-white hover:border-slate-300 text-slate-650 hover:text-slate-900"
+              ? "border-zinc-300 bg-zinc-100 text-zinc-900 font-bold"
+              : "border-transparent bg-transparent hover:bg-zinc-100 text-zinc-650 hover:text-zinc-900"
           }`}
         >
           <span className="flex items-center gap-2">
-            <LayoutDashboard className="w-4 h-4" /> Dashboard
+            <LayoutDashboard className="w-3.5 h-3.5" /> Dashboard
           </span>
         </button>
 
@@ -143,59 +143,59 @@ export default function Sidebar({
             onChangeTab("chat");
             onSelectSession(null);
           }}
-          className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm shadow-sm transition-all active:scale-[0.98] ${
+          className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md font-semibold text-xs transition-all ${
             activeTab === "chat" && !activeSessionId
-              ? "bg-[#1a253c] hover:bg-[#253554] text-white"
-              : "border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900"
+              ? "bg-zinc-900 hover:bg-zinc-800 text-white"
+              : "border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 hover:text-zinc-900"
           }`}
         >
-          <Plus className="w-4 h-4" /> New Study Chat
+          <Plus className="w-3.5 h-3.5" /> New Study Chat
         </button>
 
         <button
           onClick={() => onChangeTab("docs")}
-          className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl border font-semibold text-sm transition-all ${
+          className={`w-full flex items-center justify-between px-3 py-2 rounded-md border text-xs font-medium transition-all ${
             activeTab === "docs"
-              ? "border-indigo-150 bg-indigo-50/70 text-indigo-700"
-              : "border-slate-200 bg-white hover:border-slate-300 text-slate-600 hover:text-slate-900"
+              ? "border-zinc-300 bg-zinc-100 text-zinc-900 font-bold"
+              : "border-transparent bg-transparent hover:bg-zinc-100 text-zinc-650 hover:text-zinc-900"
           }`}
         >
           <span className="flex items-center gap-2">
-            <Database className="w-4 h-4" /> Knowledge Base
+            <Database className="w-3.5 h-3.5" /> Knowledge Base
           </span>
-          <span className="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-md font-mono font-semibold">
+          <span className="text-[10px] bg-zinc-100 text-zinc-600 border border-zinc-200 px-1.5 py-0.5 rounded font-mono font-medium">
             PDFs
           </span>
         </button>
 
         <button
           onClick={() => onChangeTab("sppu")}
-          className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl border font-semibold text-sm transition-all ${
+          className={`w-full flex items-center justify-between px-3 py-2 rounded-md border text-xs font-medium transition-all ${
             activeTab === "sppu"
-              ? "border-indigo-150 bg-indigo-50/70 text-indigo-700"
-              : "border-slate-200 bg-white hover:border-slate-300 text-slate-600 hover:text-slate-900"
+              ? "border-zinc-300 bg-zinc-100 text-zinc-900 font-bold"
+              : "border-transparent bg-transparent hover:bg-zinc-100 text-zinc-650 hover:text-zinc-900"
           }`}
         >
           <span className="flex items-center gap-2">
-            <Globe className="w-4 h-4" /> SPPU Hub
+            <Globe className="w-3.5 h-3.5" /> SPPU Hub
           </span>
-          <span className="text-[10px] bg-indigo-105 text-indigo-700 border border-indigo-200 px-1.5 py-0.5 rounded-md font-mono font-bold animate-pulse">
+          <span className="text-[10px] bg-zinc-100 text-zinc-600 border border-zinc-200 px-1.5 py-0.5 rounded font-mono font-medium">
             Circulars
           </span>
         </button>
 
         <button
           onClick={() => onChangeTab("analyzer")}
-          className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl border font-semibold text-sm transition-all ${
+          className={`w-full flex items-center justify-between px-3 py-2 rounded-md border text-xs font-medium transition-all ${
             activeTab === "analyzer"
-              ? "border-indigo-150 bg-indigo-50/70 text-indigo-700"
-              : "border-slate-200 bg-white hover:border-slate-300 text-slate-600 hover:text-slate-900"
+              ? "border-zinc-300 bg-zinc-100 text-zinc-900 font-bold"
+              : "border-transparent bg-transparent hover:bg-zinc-100 text-zinc-650 hover:text-zinc-900"
           }`}
         >
           <span className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4" /> Pattern Analyzer
+            <TrendingUp className="w-3.5 h-3.5" /> Pattern Analyzer
           </span>
-          <span className="text-[10px] bg-emerald-50 text-emerald-705 border border-emerald-200 px-1.5 py-0.5 rounded-md font-mono font-bold">
+          <span className="text-[10px] bg-zinc-100 text-zinc-600 border border-zinc-200 px-1.5 py-0.5 rounded font-mono font-medium">
             New
           </span>
         </button>
@@ -203,17 +203,17 @@ export default function Sidebar({
 
       {/* Chat History List */}
       <div className="flex-1 overflow-y-auto px-3 py-2 flex flex-col gap-1 min-h-0">
-        <h2 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 mb-2">
+        <h2 className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider px-2 mb-2">
           Chat History
         </h2>
 
         {loading && sessions.length === 0 ? (
           <div className="flex justify-center items-center py-6">
-            <Loader2 className="w-5 h-5 text-indigo-600 animate-spin" />
+            <Loader2 className="w-4 h-4 text-zinc-600 animate-spin" />
           </div>
         ) : sessions.length === 0 ? (
-          <div className="text-center py-8 text-xs text-slate-400 flex flex-col items-center gap-1.5">
-            <MessageCircle className="w-6 h-6 text-slate-300" />
+          <div className="text-center py-8 text-xs text-zinc-400 flex flex-col items-center gap-1.5">
+            <MessageCircle className="w-5 h-5 text-zinc-300" />
             <span>No previous study chats.</span>
           </div>
         ) : (
@@ -226,15 +226,15 @@ export default function Sidebar({
                   onChangeTab("chat");
                   onSelectSession(session.id);
                 }}
-                className={`group flex items-center justify-between p-2.5 rounded-xl cursor-pointer transition-all duration-200 ${
+                className={`group flex items-center justify-between p-2 rounded-md cursor-pointer transition-all duration-200 ${
                   isActive
-                    ? "bg-slate-100 text-slate-900 border border-slate-200/60 font-semibold"
-                    : "hover:bg-slate-50 text-slate-600 hover:text-slate-900 border border-transparent"
+                    ? "bg-zinc-100 text-zinc-900 border border-zinc-200 font-semibold"
+                    : "hover:bg-zinc-50 text-zinc-600 hover:text-zinc-900 border border-transparent"
                 }`}
               >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <MessageSquare className={`w-4.5 h-4.5 shrink-0 ${isActive ? "text-indigo-650" : "text-slate-400 group-hover:text-slate-550"}`} />
-                  <span className="text-sm truncate pr-1" title={session.title}>
+                <div className="flex items-center gap-2 min-w-0">
+                  <MessageSquare className={`w-4 h-4 shrink-0 ${isActive ? "text-zinc-900" : "text-zinc-450 group-hover:text-zinc-600"}`} />
+                  <span className="text-xs truncate pr-1" title={session.title}>
                     {session.title}
                   </span>
                 </div>
@@ -242,13 +242,13 @@ export default function Sidebar({
                 <button
                   onClick={(e) => handleDeleteSession(e, session.id)}
                   disabled={deletingId === session.id}
-                  className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-slate-200 transition"
+                  className="opacity-0 group-hover:opacity-100 p-1 rounded text-zinc-450 hover:text-zinc-900 hover:bg-zinc-200 transition"
                   title="Delete chat session"
                 >
                   {deletingId === session.id ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <Loader2 className="w-3 h-3 animate-spin" />
                   ) : (
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-3 h-3" />
                   )}
                 </button>
               </div>
@@ -259,30 +259,26 @@ export default function Sidebar({
 
       {/* Authenticated Profile Card Footer */}
       {user && (
-        <div className="p-3.5 border-t border-slate-200 bg-slate-50/50 flex items-center justify-between gap-3">
+        <div className="p-3.5 border-t border-zinc-200 bg-zinc-50 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-slate-200 border border-slate-300 flex items-center justify-center font-bold text-xs text-slate-700 shrink-0">
+            <div className="w-8 h-8 rounded bg-zinc-200 border border-zinc-300 flex items-center justify-center font-bold text-xs text-zinc-700 shrink-0 font-mono">
               {getInitials(user.email)}
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-bold text-slate-800 truncate leading-snug" title={user.email}>
+              <p className="text-xs font-bold text-zinc-800 truncate leading-snug" title={user.email}>
                 {user.email}
               </p>
-              <span className={`inline-flex items-center text-[9px] font-bold px-1.5 py-0.5 rounded-md mt-0.5 select-none ${
-                user.role === "MODERATOR" 
-                  ? "bg-amber-500/10 text-amber-600 border border-amber-500/20"
-                  : "bg-indigo-500/10 text-indigo-600 border border-indigo-500/20"
-              }`}>
+              <span className="inline-flex items-center text-[9px] font-bold px-1.5 py-0.5 rounded border border-zinc-300 bg-zinc-100 text-zinc-800 select-none">
                 {user.role}
               </span>
             </div>
           </div>
           <button
             onClick={handleLogout}
-            className="p-2 rounded-xl border border-slate-200 hover:border-slate-350 hover:bg-slate-100 text-slate-500 hover:text-rose-600 transition shrink-0"
+            className="p-1.5 rounded-md border border-zinc-200 hover:border-zinc-300 hover:bg-zinc-100 text-zinc-555 hover:text-zinc-900 transition shrink-0"
             title="Log Out"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-3.5 h-3.5" />
           </button>
         </div>
       )}

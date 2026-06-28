@@ -101,9 +101,9 @@ export default function Home() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen w-screen bg-slate-50 flex flex-col items-center justify-center text-slate-800 font-sans">
-        <Loader2 className="w-10 h-10 text-indigo-600 animate-spin mb-4" />
-        <p className="text-sm text-slate-500 font-bold animate-pulse">Initializing secure session...</p>
+      <div className="min-h-screen w-screen bg-zinc-50 flex flex-col items-center justify-center text-zinc-800 font-mono">
+        <Loader2 className="w-10 h-10 text-zinc-900 animate-spin mb-4" />
+        <p className="text-sm text-zinc-500 font-bold animate-pulse">Initializing secure session...</p>
       </div>
     );
   }
@@ -111,7 +111,7 @@ export default function Home() {
   if (!user) return null;
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-white font-sans antialiased text-slate-800 relative">
+    <div className="flex h-screen w-screen overflow-hidden bg-white font-sans antialiased text-zinc-800 relative">
       {/* Sidebar Navigation */}
       {activeTab !== "dashboard" && (
         <Sidebar
@@ -135,7 +135,7 @@ export default function Home() {
       )}
 
       {/* Main Panel */}
-      <main className="flex-1 h-full flex flex-col min-w-0 bg-slate-50">
+      <main className="flex-1 h-full flex flex-col min-w-0 bg-zinc-50">
         {activeTab === "dashboard" ? (
           <Dashboard
             user={user}
