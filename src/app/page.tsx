@@ -113,19 +113,21 @@ export default function Home() {
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-white font-sans antialiased text-slate-800 relative">
       {/* Sidebar Navigation */}
-      <Sidebar
-        user={user}
-        activeSessionId={activeSessionId}
-        onSelectSession={handleSelectSession}
-        activeTab={activeTab}
-        onChangeTab={handleChangeTab}
-        refreshTrigger={refreshTrigger}
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-      />
+      {activeTab !== "dashboard" && (
+        <Sidebar
+          user={user}
+          activeSessionId={activeSessionId}
+          onSelectSession={handleSelectSession}
+          activeTab={activeTab}
+          onChangeTab={handleChangeTab}
+          refreshTrigger={refreshTrigger}
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+        />
+      )}
 
       {/* Backdrop overlay for mobile sidebar */}
-      {isSidebarOpen && (
+      {activeTab !== "dashboard" && isSidebarOpen && (
         <div
           onClick={() => setIsSidebarOpen(false)}
           className="fixed inset-0 z-30 bg-black/30 backdrop-blur-sm md:hidden"

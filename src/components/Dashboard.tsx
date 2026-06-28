@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { MessageCircle, Database, Globe, TrendingUp, User, Award, Shield, FileText } from "lucide-react";
+import { MessageCircle, Database, Globe, TrendingUp, User, Award, Shield, FileText, LogOut } from "lucide-react";
 import { UserSession } from "../app/page";
 
 interface DashboardProps {
@@ -18,6 +18,17 @@ export default function Dashboard({ user, onChangeTab, onToggleSidebar }: Dashbo
   const getRoleIcon = (role: string) => {
     if (role === "MODERATOR") return <Shield className="w-4 h-4 text-rose-500" />;
     return <User className="w-4 h-4 text-indigo-500" />;
+  };
+
+  const handleLogout = async () => {
+    try {
+      const res = await fetch("/api/auth/logout", { method: "POST" });
+      if (res.ok) {
+        window.location.href = "/login";
+      }
+    } catch (err) {
+      console.error("Error logging out:", err);
+    }
   };
 
   const tools = [
@@ -65,16 +76,8 @@ export default function Dashboard({ user, onChangeTab, onToggleSidebar }: Dashbo
       <div className="bg-gradient-to-r from-[#1a253c] to-[#2b3a58] text-white rounded-2xl p-6 md:p-8 shadow-md relative overflow-hidden mb-8">
         <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full blur-[80px] pointer-events-none" />
         
-        {/* Mobile Header Toggle */}
+        {/* Mobile Header Title */}
         <div className="flex justify-between items-center md:hidden mb-4">
-          <button
-            onClick={onToggleSidebar}
-            className="p-1 rounded-lg bg-white/10 hover:bg-white/20 text-white transition"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-            </svg>
-          </button>
           <span className="text-xs font-bold bg-white/15 px-2.5 py-1 rounded-full uppercase tracking-wider">UniBot Dashboard</span>
         </div>
 
@@ -162,6 +165,13 @@ export default function Dashboard({ user, onChangeTab, onToggleSidebar }: Dashbo
                 Online
               </span>
             </div>
+
+            <button
+              onClick={handleLogout}
+              className="w-full mt-6 py-2 bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200 hover:border-rose-600 font-bold text-xs rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <LogOut className="w-3.5 h-3.5 animate-pulse" /> Log Out
+            </button>
           </div>
 
           {/* Quick Notice Widget */}
